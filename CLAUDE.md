@@ -22,12 +22,12 @@ structured test cases. QA engineers review, edit, and export to Zephyr Scale or 
 4. When done, stop and wait for confirmation before moving to the next phase
 
 ## Current phase
-context/phase-1-server-foundation.md
+context/phase-3-projects.md
 
 ## Phase status
-- context/phase-1-server-foundation.md   🔵 in progress
-- context/phase-2-authentication.md      🔲 pending
-- context/phase-3-projects.md            🔲 pending
+- context/phase-1-server-foundation.md   ✅ done
+- context/phase-2-authentication.md      ✅ done
+- context/phase-3-projects.md            🔵 in progress
 - context/phase-4-ticket-ingestion.md    🔲 pending
 - context/phase-5-llm-generation.md      🔲 pending
 - context/phase-6-review-editing.md      🔲 pending
