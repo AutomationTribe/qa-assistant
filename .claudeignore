@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+.env.*.local
+*.log
+*.snap
+.DS_Store
+client/.vite/
+server/generated/

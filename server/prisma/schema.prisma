@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     User[]
+  projects  Project[]
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role      @default(QA_ENGINEER)
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum Role {
+  ADMIN
+  QA_LEAD
+  QA_ENGINEER
+  VIEWER
+}
+
+model Project {
+  id             String          @id @default(uuid())
+  name           String
+  workspaceId    String
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  jiraProjectKey String?
+  templateConfig Json
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tickets        Ticket[]
+  jiraConnection JiraConnection?
+}
+
+model JiraConnection {
+  id            String   @id @default(uuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id])
+  accessToken   String   @db.Text
+  refreshToken  String   @db.Text
+  cloudId       String
+  jiraBaseUrl   String
+  webhookSecret String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Ticket {
+  id                 String     @id @default(uuid())
+  jiraIssueKey       String?
+  summary            String
+  description        String     @db.Text
+  acceptanceCriteria String?    @db.Text
+  status             TicketStatus @default(PENDING)
+  source             TicketSource @default(MANUAL)
+  projectId          String
+  project            Project    @relation(fields: [projectId], references: [id])
+  testCases          TestCase[]
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+enum TicketStatus {
+  PENDING
+  GENERATING
+  DONE
+  FAILED
+}
+
+enum TicketSource {
+  MANUAL
+  JIRA_WEBHOOK
+  JIRA_API
+}
+
+model TestCase {
+  id             String           @id @default(uuid())
+  ticketId       String
+  ticket         Ticket           @relation(fields: [ticketId], references: [id])
+  projectId      String
+  title          String
+  priority       Priority         @default(MEDIUM)
+  testType       TestType         @default(POSITIVE)
+  preconditions  String?          @db.Text
+  steps          Json
+  expectedResult String           @db.Text
+  generatedBy    GeneratedBy      @default(LLM)
+  versions       TestCaseVersion[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TestType {
+  POSITIVE
+  NEGATIVE
+  EDGE_CASE
+}
+
+enum GeneratedBy {
+  LLM
+  HUMAN
+}
+
+model TestCaseVersion {
+  id         String   @id @default(uuid())
+  testCaseId String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id])
+  content    Json
+  editedBy   String
+  createdAt  DateTime @default(now())
+}

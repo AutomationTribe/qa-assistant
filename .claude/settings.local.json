@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(timeout 8 npm run dev)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(npm install *)",
+      "Bash(pkill -f \"ts-node-dev\")",
+      "Read(//private/tmp/**)",
+      "Bash(curl http://localhost:3001/health)",
+      "Bash(redis-cli ping *)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(mysql -h localhost -u regi -p'regi' -e \"SELECT 1;\")"
+    ]
+  }
+}
