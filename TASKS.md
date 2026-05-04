@@ -12,26 +12,29 @@
    - Set up server Express + Prisma + BullMQ boilerplate
 
 ### Authentication
-🔲 JWT auth middleware (server)
+✅ JWT auth middleware (server)
    - Files: server/src/middleware/auth.ts
    - Verify JWT on protected routes, attach user to req
    - Return 401 with standard error shape if invalid
 
-🔲 Login + register endpoints
+✅ Login + register endpoints
    - Files: server/src/routes/auth.ts, server/src/controllers/authController.ts
    - POST /api/v1/auth/register — hash password (bcrypt), create User
    - POST /api/v1/auth/login — verify password, return access + refresh tokens
    - POST /api/v1/auth/refresh — rotate refresh token, return new access token
    - POST /api/v1/auth/logout — clear refresh token cookie
 
-🔲 Auth UI (client)
+✅ Auth UI (client)
    - Files: client/src/pages/LoginPage.tsx, client/src/store/authStore.ts
-   - Login form with email + password
+   - Tabbed login page (Sign In | Create Account)
+   - Sign In form with email + password
+   - Create Account form with name, email, password, workspace name (zod validation)
    - Store access token in Zustand (in memory only, not localStorage)
    - Axios interceptor auto-attaches Bearer token
+   - Auto-login after registration, then navigate to /projects
 
 ### Project management
-🔲 Workspace + Project CRUD (server)
+✅ Workspace + Project CRUD (server)
    - Files: server/src/routes/projects.ts, server/src/controllers/projectController.ts,
      server/src/services/projectService.ts
    - GET /api/v1/projects — list projects for workspace
@@ -39,10 +42,18 @@
    - PATCH /api/v1/projects/:id — update name/templateConfig
    - DELETE /api/v1/projects/:id — soft delete
 
-🔲 Project list + create UI (client)
-   - Files: client/src/pages/ProjectsPage.tsx
-   - List of project cards
+✅ Project list + create UI (client)
+   - Files: client/src/pages/ProjectsPage.tsx, client/src/components/CreateProjectModal.tsx,
+     client/src/pages/LoginPage.tsx, client/src/components/ProtectedRoute.tsx,
+     client/src/store/authStore.ts, client/src/store/projectStore.ts, client/src/api/client.ts,
+     client/src/api/projects.ts, client/src/types/api.ts, client/src/App.tsx
+   - List of project cards with template style badge and ticket count
    - Create project modal (name + template style: bdd | step_by_step | exploratory)
+   - Login page with email/password form, react-hook-form validation
+   - Zustand stores for auth and projects with proper state management
+   - Axios client with JWT auth interceptor and 401 refresh logic
+   - Protected route wrapper for authenticated pages
+   - Complete routing setup with React Router
 
 ### Ticket ingestion
 🔲 Manual ticket input (server)
@@ -58,9 +69,10 @@
    - Store in JiraConnection table (AES-256 encrypted accessToken + refreshToken)
 
 ### LLM generation
-🔲 Prisma schema + first migration
+✅ Prisma schema + first migration
    - Files: server/src/prisma/schema.prisma
    - All models: Workspace, User, Project, Ticket, TestCase, TestCaseVersion, JiraConnection
+   - Migration: Added deletedAt field to Project for soft delete support
    - Run: npx prisma migrate dev --name init (human runs this)
 
 🔲 BullMQ LLM worker

@@ -22,13 +22,13 @@ structured test cases. QA engineers review, edit, and export to Zephyr Scale or 
 4. When done, stop and wait for confirmation before moving to the next phase
 
 ## Current phase
-context/phase-3-projects.md
+context/phase-4-ticket-ingestion.md
 
 ## Phase status
 - context/phase-1-server-foundation.md   ✅ done
 - context/phase-2-authentication.md      ✅ done
-- context/phase-3-projects.md            🔵 in progress
-- context/phase-4-ticket-ingestion.md    🔲 pending
+- context/phase-3-projects.md            ✅ done
+- context/phase-4-ticket-ingestion.md    🔵 in progress
 - context/phase-5-llm-generation.md      🔲 pending
 - context/phase-6-review-editing.md      🔲 pending
 - context/phase-7-export.md              🔲 pending
@@ -41,6 +41,23 @@ Read context/architecture.md to understand why key decisions were made.
 - server/ code only touches server/ files
 - Never mix client and server imports
 - Shared types are duplicated in each — no shared/ folder
+
+## After every phase — mandatory updates
+After implementing any phase, Claude Code must always do these three things:
+
+1. Update context/api-endpoints.md
+   - Add every new endpoint created in this phase
+   - Include the HTTP method, full path, request body, and example response
+   - Follow the exact format already in that file
+
+2. Add Swagger JSDoc comments to every new route file
+   - Every route must have a @swagger comment above it
+   - Follow the format in context/setup-swagger.md
+   - Do not skip any route
+
+3. Update TASKS.md at the repo root
+   - Mark the completed phase as ✅ done
+   - Mark the next phase as 🔵 in progress
 
 ## Never do
 - Never run prisma migrate dev automatically — show the SQL first and wait for approval

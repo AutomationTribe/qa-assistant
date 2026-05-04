@@ -1,0 +1,32 @@
+import axios from 'axios';
+import { useAuthStore } from '@/store/authStore';
+const apiClient = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+    withCredentials: true,
+});
+apiClient.interceptors.request.use((config) => {
+    const { accessToken } = useAuthStore.getState();
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+});
+apiClient.interceptors.response.use((response) => response, async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+            const response = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true });
+            const { accessToken } = response.data;
+            useAuthStore.getState().setAuth(useAuthStore.getState().user, accessToken);
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            return apiClient(originalRequest);
+        }
+        catch {
+            useAuthStore.getState().clearAuth();
+            window.location.href = '/login';
+        }
+    }
+    return Promise.reject(error);
+});
+export default apiClient;
