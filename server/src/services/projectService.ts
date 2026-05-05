@@ -11,14 +11,26 @@ interface TemplateConfig {
   style: 'bdd' | 'step_by_step' | 'exploratory'
 }
 
+interface ProjectLogin {
+  username: string
+  password: string
+  role?: string
+}
+
 interface CreateProjectPayload {
   name: string
+  description?: string
+  baseUrl?: string
   templateConfig: TemplateConfig
+  logins?: ProjectLogin[]
 }
 
 interface UpdateProjectPayload {
   name?: string
+  description?: string
+  baseUrl?: string
   templateConfig?: TemplateConfig
+  logins?: ProjectLogin[]
 }
 
 export const projectService = {
@@ -31,11 +43,14 @@ export const projectService = {
       select: {
         id: true,
         name: true,
+        description: true,
+        baseUrl: true,
         workspaceId: true,
         templateConfig: true,
+        logins: true,
         createdAt: true,
         _count: {
-          select: { tickets: { where: { id: { not: undefined } } } },
+          select: { tickets: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -45,7 +60,7 @@ export const projectService = {
   },
 
   async createProject(workspaceId: string, data: CreateProjectPayload) {
-    const { name, templateConfig } = data
+    const { name, description, baseUrl, templateConfig, logins } = data
 
     const existingProject = await prisma.project.findFirst({
       where: {
@@ -62,15 +77,24 @@ export const projectService = {
     const project = await prisma.project.create({
       data: {
         name,
+        description: description || null,
+        baseUrl: baseUrl || null,
         workspaceId,
         templateConfig,
+        logins: logins && logins.length > 0 ? logins : null,
       },
       select: {
         id: true,
         name: true,
+        description: true,
+        baseUrl: true,
         workspaceId: true,
         templateConfig: true,
+        logins: true,
         createdAt: true,
+        _count: {
+          select: { tickets: true },
+        },
       },
     })
 
@@ -94,14 +118,23 @@ export const projectService = {
       where: { id: projectId },
       data: {
         ...(data.name && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description || null }),
+        ...(data.baseUrl !== undefined && { baseUrl: data.baseUrl || null }),
         ...(data.templateConfig && { templateConfig: data.templateConfig }),
+        ...(data.logins !== undefined && { logins: data.logins && data.logins.length > 0 ? data.logins : null }),
       },
       select: {
         id: true,
         name: true,
+        description: true,
+        baseUrl: true,
         workspaceId: true,
         templateConfig: true,
+        logins: true,
         updatedAt: true,
+        _count: {
+          select: { tickets: true },
+        },
       },
     })
 

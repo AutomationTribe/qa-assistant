@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/store/authStore'
+import Input from '@/components/ui/Input'
+import Button from '@/components/ui/Button'
 import apiClient from '@/api/client'
 import type { AuthUser } from '@/types/api'
 
@@ -85,144 +87,127 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Regi</h1>
-
-        <div className="flex gap-4 border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setActiveTab('signin')}
-            className={`pb-2 px-2 font-medium transition ${
-              activeTab === 'signin'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => setActiveTab('signup')}
-            className={`pb-2 px-2 font-medium transition ${
-              activeTab === 'signup'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Create Account
-          </button>
+    <div className="flex min-h-screen">
+      {/* Left Panel */}
+      <div className="hidden lg:flex lg:w-[38%] bg-gradient-to-b from-[#18181B] to-[#312E81] flex-col justify-between p-12 text-white">
+        <div>
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-12 h-12 rounded-xl bg-[#4F46E5] flex items-center justify-center font-bold text-lg">
+              R
+            </div>
+            <span className="text-2xl font-bold">Regi</span>
+          </div>
+          <p className="text-lg leading-relaxed opacity-90 max-w-md">
+            Generate QA test cases from your tickets using AI.
+          </p>
         </div>
 
-        {activeTab === 'signin' && (
-          <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
+        <div className="border-l-2 border-[#4F46E5] pl-4">
+          <p className="italic mb-4 text-base leading-relaxed opacity-90">
+            "Testing is the most important part of software development. Regi makes it painless."
+          </p>
+          <p className="text-sm opacity-70">— QA Lead, TechCorp</p>
+        </div>
+      </div>
+
+      {/* Right Panel */}
+      <div className="flex-1 bg-white flex items-center justify-center p-6">
+        <div className="w-full max-w-[320px]">
+          <h1 className="text-[22px] font-semibold text-[#111] mb-2">Welcome back</h1>
+          <p className="text-[13px] text-[#999] mb-6">Sign in to your Regi workspace</p>
+
+          {/* Tabs */}
+          <div className="flex gap-6 border-b border-[#EBEBEB] mb-6">
+            <button
+              onClick={() => setActiveTab('signin')}
+              className={`pb-2 text-sm font-medium transition ${
+                activeTab === 'signin'
+                  ? 'border-b-2 border-[#4F46E5] text-[#4F46E5]'
+                  : 'border-b-2 border-transparent text-[#aaa] hover:text-[#666]'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setActiveTab('signup')}
+              className={`pb-2 text-sm font-medium transition ${
+                activeTab === 'signup'
+                  ? 'border-b-2 border-[#4F46E5] text-[#4F46E5]'
+                  : 'border-b-2 border-transparent text-[#aaa] hover:text-[#666]'
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
+
+          {/* Sign In Form */}
+          {activeTab === 'signin' && (
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+              <Input
                 type="email"
+                label="Email address"
                 placeholder="you@example.com"
                 {...loginForm.register('email')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={loginForm.formState.errors.email?.message}
               />
-              {loginForm.formState.errors.email && (
-                <p className="text-red-600 text-sm mt-1">{loginForm.formState.errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
+              <Input
                 type="password"
+                label="Password"
                 placeholder="••••••••"
                 {...loginForm.register('password')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={loginForm.formState.errors.password?.message}
               />
-              {loginForm.formState.errors.password && (
-                <p className="text-red-600 text-sm mt-1">
-                  {loginForm.formState.errors.password.message}
-                </p>
-              )}
-            </div>
+              <Button fullWidth loading={loginForm.formState.isSubmitting}>
+                Sign in →
+              </Button>
+              <p className="text-center text-[12px] text-[#999] mt-4">
+                Forgot password?{' '}
+                <a href="#" className="text-[#4F46E5] hover:underline">
+                  Reset it
+                </a>
+              </p>
+            </form>
+          )}
 
-            <button
-              type="submit"
-              disabled={loginForm.formState.isSubmitting}
-              className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-        )}
-
-        {activeTab === 'signup' && (
-          <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <input
+          {/* Create Account Form */}
+          {activeTab === 'signup' && (
+            <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+              <Input
                 type="text"
-                placeholder="Your full name"
+                label="Full name"
+                placeholder="Your name"
                 {...registerForm.register('name')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={registerForm.formState.errors.name?.message}
               />
-              {registerForm.formState.errors.name && (
-                <p className="text-red-600 text-sm mt-1">{registerForm.formState.errors.name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
+              <Input
                 type="email"
-                placeholder="you@example.com"
+                label="Work email"
+                placeholder="you@company.com"
                 {...registerForm.register('email')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={registerForm.formState.errors.email?.message}
               />
-              {registerForm.formState.errors.email && (
-                <p className="text-red-600 text-sm mt-1">{registerForm.formState.errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
+              <Input
                 type="password"
+                label="Password"
                 placeholder="••••••••"
+                hint="Use at least 8 characters"
                 {...registerForm.register('password')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={registerForm.formState.errors.password?.message}
               />
-              {registerForm.formState.errors.password && (
-                <p className="text-red-600 text-sm mt-1">
-                  {registerForm.formState.errors.password.message}
-                </p>
-              )}
-              {!registerForm.formState.errors.password && (
-                <p className="text-gray-500 text-xs mt-1">Use at least 8 characters</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Workspace Name</label>
-              <input
+              <Input
                 type="text"
-                placeholder="Your company or team name"
+                label="Workspace name"
+                placeholder="Your team's workspace"
+                hint="Your team's shared workspace in Regi"
                 {...registerForm.register('workspaceName')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                error={registerForm.formState.errors.workspaceName?.message}
               />
-              {registerForm.formState.errors.workspaceName && (
-                <p className="text-red-600 text-sm mt-1">
-                  {registerForm.formState.errors.workspaceName.message}
-                </p>
-              )}
-              <p className="text-gray-500 text-xs mt-1">This is your team's workspace in Regi</p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={registerForm.formState.isSubmitting}
-              className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {registerForm.formState.isSubmitting ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
-        )}
+              <Button fullWidth loading={registerForm.formState.isSubmitting}>
+                Create account →
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

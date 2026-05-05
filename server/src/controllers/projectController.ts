@@ -4,9 +4,20 @@ import { projectService, ProjectError } from '@/services/projectService'
 
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
+  description: z.string().optional(),
+  baseUrl: z.string().url().optional().or(z.literal('')),
   templateConfig: z.object({
     style: z.enum(['bdd', 'step_by_step', 'exploratory']),
   }),
+  logins: z
+    .array(
+      z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+        role: z.string().optional(),
+      })
+    )
+    .optional(),
 })
 
 const updateProjectSchema = z.object({

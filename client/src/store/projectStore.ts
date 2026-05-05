@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, TemplateConfig } from '@/types/api'
+import type { Project, TemplateConfig, ProjectLogin } from '@/types/api'
 import { getProjects, createProject as apiCreateProject } from '@/api/projects'
 
 interface ProjectState {
@@ -8,7 +8,13 @@ interface ProjectState {
   loading: boolean
   error: string | null
   fetchProjects: () => Promise<void>
-  createProject: (data: { name: string; templateConfig: TemplateConfig }) => Promise<void>
+  createProject: (data: {
+    name: string
+    description?: string
+    baseUrl?: string
+    templateConfig: TemplateConfig
+    logins?: ProjectLogin[]
+  }) => Promise<void>
   selectProject: (project: Project) => void
 }
 
