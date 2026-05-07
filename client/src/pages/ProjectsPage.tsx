@@ -36,7 +36,7 @@ export default function ProjectsPage() {
     const project = projects.find((p) => p.id === projectId)
     if (project) {
       selectProject(project)
-      navigate('/generate')
+      navigate(`/projects/${projectId}/features`)
     }
   }
 

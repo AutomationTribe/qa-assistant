@@ -49,6 +49,22 @@ export type TestCaseTemplate = {
   updatedAt: string
 }
 
+export type FeatureType = 'NEW_FEATURE' | 'BUG'
+export type FeatureStatus = 'DRAFT' | 'FINAL'
+
+export type Feature = {
+  id: string
+  name: string
+  type: FeatureType
+  status: FeatureStatus
+  projectId: string
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    testCases: number
+  }
+}
+
 export type ApiError = {
   error: { code: string; message: string }
 }

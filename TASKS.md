@@ -5,7 +5,7 @@
 - Phase 2 — Authentication                   ✅ done
 - Phase 3 — Projects CRUD + UI               ✅ done
 - Phase 4 — Test Case Template Builder       ✅ done
-- Phase 5 — Ticket Ingestion                 🔵 in progress
+- Phase 5 — Features                         ✅ done
 - Phase 6 — LLM Generation                   🔲 pending
 - Phase 7 — Review and Editing               🔲 pending
 - Phase 8 — Export                           🔲 pending
@@ -145,30 +145,35 @@
 
 ---
 
-## Phase 5 — Ticket Ingestion 🔲
+## Phase 5 — Features ✅
 
-🔲 Manual ticket input (server)
-   - Files: server/src/routes/tickets.ts,
-     server/src/controllers/ticketController.ts,
-     server/src/services/ticketService.ts
-   - POST /api/v1/tickets — create Ticket from pasted text
-   - GET  /api/v1/tickets/:id — fetch ticket with test cases
-   - GET  /api/v1/tickets?projectId=xxx — list tickets for project
+✅ Feature model + migration (server)
+   - Add models: Feature to schema.prisma with FeatureType enum (NEW_FEATURE, BUG) and FeatureStatus enum (DRAFT, FINAL)
+   - Update TestCase model: add optional featureId, make ticketId optional
+   - Update Project model: add features relation
+   - Migration: add_features
 
-🔲 Jira OAuth 2.0 flow (server)
-   - Files: server/src/services/jira/jiraService.ts,
-     server/src/routes/jira.ts
-   - GET /api/v1/auth/jira/connect — redirect to Atlassian OAuth
-   - GET /api/v1/auth/jira/callback — exchange code, store encrypted tokens
-   - JiraConnection table: AES-256 encrypted accessToken + refreshToken
+✅ Feature CRUD endpoints (server)
+   - Files: server/src/services/featureService.ts,
+     server/src/controllers/featureController.ts,
+     server/src/routes/features.ts
+   - GET    /api/v1/projects/:projectId/features — list with search, date, status filters
+   - POST   /api/v1/projects/:projectId/features — create feature
+   - PATCH  /api/v1/projects/:projectId/features/:featureId — update feature
+   - DELETE /api/v1/projects/:projectId/features/:featureId — soft delete feature
 
-🔲 Ticket input UI (client)
-   - Files: client/src/pages/GeneratePage.tsx,
-     client/src/store/ticketStore.ts, client/src/api/tickets.ts
-   - Project selector dropdown
-   - Summary, description, acceptance criteria fields
-   - Save ticket → success state with disabled Generate button
-   - Recent tickets list for selected project
+✅ Features page (client)
+   - Files: client/src/pages/FeaturesPage.tsx,
+     client/src/components/AddFeaturePanel.tsx,
+     client/src/store/featureStore.ts, client/src/api/features.ts
+   - Feature list table with name, type badge, date, test cases count, status
+   - Tabs: All | Draft
+   - Search and date range filters
+   - Sortable columns (Date, Test Cases)
+   - Empty states (no features, no search results)
+   - Loading skeleton
+   - Add Feature slide-in panel with form validation
+   - Row click navigates to feature test cases page (URL only for now)
 
 ---
 

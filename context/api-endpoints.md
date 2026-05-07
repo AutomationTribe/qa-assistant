@@ -448,6 +448,134 @@ Errors:
 
 ---
 
+## Features — /api/v1/projects/:projectId/features
+All routes require: Authorization: Bearer {accessToken}
+
+### GET /api/v1/projects/:projectId/features
+List all features for a project with optional filtering.
+
+Query params (all optional):
+- search: string — filter features by name (case-insensitive contains)
+- dateFrom: ISO date string — filter features created on or after this date
+- dateTo: ISO date string — filter features created on or before this date
+- status: "DRAFT" | "FINAL" — filter features by status
+
+Response 200:
+```json
+{
+  "features": [
+    {
+      "id": "uuid",
+      "name": "User can log in with email and password",
+      "type": "NEW_FEATURE",
+      "status": "DRAFT",
+      "projectId": "uuid",
+      "createdAt": "2026-05-01T12:00:00.000Z",
+      "updatedAt": "2026-05-01T12:00:00.000Z",
+      "_count": {
+        "testCases": 5
+      }
+    }
+  ]
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+
+---
+
+### POST /api/v1/projects/:projectId/features
+Create a new feature.
+
+Request body:
+```json
+{
+  "name": "User can log in with email and password",
+  "type": "NEW_FEATURE"
+}
+```
+type must be: "NEW_FEATURE" | "BUG"
+name must be 3-200 characters
+
+Response 201:
+```json
+{
+  "feature": {
+    "id": "uuid",
+    "name": "User can log in with email and password",
+    "type": "NEW_FEATURE",
+    "status": "FINAL",
+    "projectId": "uuid",
+    "createdAt": "2026-05-01T12:00:00.000Z",
+    "updatedAt": "2026-05-01T12:00:00.000Z",
+    "_count": {
+      "testCases": 0
+    }
+  }
+}
+```
+
+Note: Manually created features have status "FINAL" by default. Features created from Jira webhooks (Phase 6+) will have status "DRAFT".
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+- 400 VALIDATION_ERROR — invalid input (name length, type enum)
+
+---
+
+### PATCH /api/v1/projects/:projectId/features/:featureId
+Update a feature (all fields optional).
+
+Request body:
+```json
+{
+  "name": "Updated feature name",
+  "type": "BUG",
+  "status": "FINAL"
+}
+```
+
+Response 200:
+```json
+{
+  "feature": {
+    "id": "uuid",
+    "name": "Updated feature name",
+    "type": "BUG",
+    "status": "FINAL",
+    "projectId": "uuid",
+    "updatedAt": "2026-05-01T13:00:00.000Z",
+    "_count": {
+      "testCases": 5
+    }
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+- 400 VALIDATION_ERROR — invalid input
+
+---
+
+### DELETE /api/v1/projects/:projectId/features/:featureId
+Soft delete a feature (sets deletedAt timestamp, data is not removed).
+
+No request body.
+
+Response 200:
+```json
+{
+  "message": "Feature deleted"
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+
+---
+
 ## Tickets — /api/v1/tickets
 All routes require: Authorization: Bearer {accessToken}
 

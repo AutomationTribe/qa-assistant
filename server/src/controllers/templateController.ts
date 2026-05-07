@@ -2,15 +2,14 @@ import { Request, Response } from 'express'
 import { templateService, TemplateError } from '@/services/templateService'
 
 interface AuthRequest extends Request {
-  workspaceId?: string
-  userId?: string
+  user?: { id: string; workspaceId: string }
 }
 
 export const templateController = {
   async getTemplate(req: AuthRequest, res: Response) {
     try {
       const { projectId } = req.params
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.getTemplate(projectId, workspaceId)
 
@@ -31,7 +30,7 @@ export const templateController = {
     try {
       const { projectId } = req.params
       const { fields } = req.body
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.createTemplate(projectId, workspaceId, fields)
 
@@ -53,7 +52,7 @@ export const templateController = {
     try {
       const { projectId } = req.params
       const { fields } = req.body
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.getTemplate(projectId, workspaceId)
 
@@ -83,7 +82,7 @@ export const templateController = {
     try {
       const { projectId } = req.params
       const { field } = req.body
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.getTemplate(projectId, workspaceId)
 
@@ -112,7 +111,7 @@ export const templateController = {
   async removeField(req: AuthRequest, res: Response) {
     try {
       const { projectId, fieldId } = req.params
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.getTemplate(projectId, workspaceId)
 
@@ -142,7 +141,7 @@ export const templateController = {
     try {
       const { projectId } = req.params
       const { fieldIds } = req.body
-      const workspaceId = req.workspaceId!
+      const workspaceId = req.user!.workspaceId
 
       const template = await templateService.getTemplate(projectId, workspaceId)
 

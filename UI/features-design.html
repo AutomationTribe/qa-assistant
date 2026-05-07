@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Regi — Features Page Design</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:#E8E8E5;padding:20px;min-height:100vh}
+.legend{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;max-width:1100px;margin-left:auto;margin-right:auto;border:1px solid #DDDDD9}
+.legend h3{font-size:13px;font-weight:600;color:#111;margin-bottom:8px}
+.legend-grid{display:flex;gap:16px;flex-wrap:wrap}
+.legend-item{font-size:12px;color:#666}
+.legend-item span{font-weight:500;color:#111}
+.switcher{display:flex;gap:8px;margin-bottom:16px;max-width:1100px;margin-left:auto;margin-right:auto;flex-wrap:wrap}
+.sw{font-size:12px;padding:6px 16px;border-radius:8px;border:1px solid #C8C8C4;background:#fff;color:#666;cursor:pointer;font-family:inherit;transition:all .15s}
+.sw.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+.browser{background:#fff;border-radius:14px;border:1px solid #D0D0CC;box-shadow:0 8px 40px rgba(0,0,0,.1);overflow:hidden;max-width:1100px;margin:0 auto}
+.chrome{height:38px;background:#F2F2EF;border-bottom:1px solid #DDDDD9;display:flex;align-items:center;gap:7px;padding:0 14px}
+.dot{width:11px;height:11px;border-radius:50%}
+.url-bar{flex:1;max-width:420px;height:22px;background:#E4E4E0;border-radius:5px;margin:0 auto;display:flex;align-items:center;padding:0 10px;font-size:11px;color:#888}
+.screen{display:none}
+.screen.on{display:flex}
+
+/* Sidebar */
+.sidebar{width:208px;background:#FAFAF8;border-right:1px solid #EBEBEB;padding:22px 14px;display:flex;flex-direction:column;flex-shrink:0;min-height:620px}
+.s-brand{font-size:15px;font-weight:700;color:#111;display:flex;align-items:center;gap:8px;margin-bottom:26px}
+.s-dot{width:8px;height:8px;border-radius:50%;background:#4F46E5}
+.nav{display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:#777;cursor:pointer}
+.ni.on{background:#EEEDF8;color:#4F46E5;font-weight:500}
+.ni-ic{font-size:13px;width:16px;text-align:center}
+.s-foot{margin-top:auto;border-top:1px solid #EBEBEB;padding-top:12px}
+.user-row{display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:4px}
+.av{width:28px;height:28px;border-radius:50%;background:#4F46E5;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u-name{font-size:12px;font-weight:500;color:#111}
+.u-role{font-size:10px;color:#aaa}
+.logout-btn{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:12.5px;color:#777;cursor:pointer;width:100%}
+.logout-btn:hover{background:#EFEFEB;color:#111}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;min-height:620px}
+.topbar{height:54px;border-bottom:1px solid #EBEBEB;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+.breadcrumb{font-size:13px;color:#999;display:flex;align-items:center;gap:6px}
+.bc-sep{color:#D0D0CC}
+.bc-current{color:#111;font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn-p{background:#4F46E5;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-s{background:#fff;color:#444;border:1px solid #D0D0CC;border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.content{flex:1;padding:20px 22px;background:#F7F7F4}
+
+/* Search bar */
+.search-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.search-wrap{position:relative;flex:1;max-width:280px}
+.search-input{width:100%;height:34px;border:1px solid #D8D8D4;border-radius:8px;padding:0 10px 0 32px;font-size:12.5px;color:#111;font-family:inherit;outline:none;background:#fff}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#aaa;font-size:13px}
+.date-input{height:34px;border:1px solid #D8D8D4;border-radius:8px;padding:0 10px;font-size:12px;color:#555;font-family:inherit;outline:none;background:#fff;cursor:pointer}
+.date-label{font-size:12px;color:#999}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid #EBEBEB;margin-bottom:16px}
+.tab{font-size:13px;padding:8px 16px;color:#aaa;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.tab.on{color:#4F46E5;border-bottom-color:#4F46E5;font-weight:500}
+.tab-count{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;font-size:10px;font-weight:600;margin-left:6px}
+.tab.on .tab-count{background:#4F46E5;color:#fff}
+.tab:not(.on) .tab-count{background:#EBEBEB;color:#888}
+
+/* Table */
+.table-wrap{background:#fff;border:1px solid #EBEBEB;border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead{background:#FAFAF8;border-bottom:1px solid #EBEBEB}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;user-select:none;cursor:pointer}
+th:hover{color:#555}
+th .sort-icon{margin-left:4px;opacity:.4;font-size:10px}
+th.sorted .sort-icon{opacity:1;color:#4F46E5}
+td{padding:13px 14px;border-bottom:1px solid #F2F2EF;color:#333;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF9;cursor:pointer}
+
+/* Feature name cell */
+.feat-name{font-size:13px;font-weight:500;color:#111;line-height:1.4;margin-bottom:2px}
+.feat-id{font-size:10.5px;color:#C0C0BC;font-family:monospace}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
+.badge-new{background:#EFF6FF;color:#2563EB}
+.badge-bug{background:#FEF2F2;color:#DC2626}
+.badge-draft{background:#FFFBEB;color:#B45309}
+.badge-final{background:#ECFDF5;color:#059669}
+.badge-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-new{background:#2563EB}
+.dot-bug{background:#DC2626}
+
+/* Test case count */
+.tc-count{font-size:13px;color:#111;font-weight:500}
+.tc-zero{color:#C0C0BC}
+
+/* Row actions */
+.row-actions{display:flex;gap:4px;opacity:0}
+tr:hover .row-actions{opacity:1}
+.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid #E4E4E0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#888;transition:all .12s}
+.icon-btn:hover{background:#EEEDF8;border-color:#C4C2F4;color:#4F46E5}
+.icon-btn.danger:hover{background:#FEF2F2;border-color:#FECACA;color:#EF4444}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid #EBEBEB;background:#FAFAF8}
+.page-info{font-size:12px;color:#999}
+.page-btns{display:flex;gap:4px}
+.page-btn{width:28px;height:28px;border-radius:7px;border:1px solid #D8D8D4;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#555;font-family:inherit}
+.page-btn.on{background:#4F46E5;border-color:#4F46E5;color:#fff}
+
+/* Empty states */
+.empty-full{display:flex;align-items:center;justify-content:center;flex:1;padding:60px 20px;background:#F7F7F4}
+.empty-card{background:#fff;border:1px solid #EBEBEB;border-radius:14px;padding:44px 36px;text-align:center;max-width:400px;width:100%}
+.empty-icon{font-size:36px;margin-bottom:14px}
+.empty-title{font-size:16px;font-weight:600;color:#111;margin-bottom:6px}
+.empty-sub{font-size:13px;color:#999;line-height:1.65;margin-bottom:22px}
+.clear-btn{font-size:13px;color:#4F46E5;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:500}
+
+/* Panel overlay */
+.panel-overlay{position:absolute;inset:0;background:rgba(0,0,0,.2);z-index:10;display:flex;justify-content:flex-end}
+.panel{width:420px;height:100%;background:#fff;display:flex;flex-direction:column;border-left:1px solid #EBEBEB;box-shadow:-8px 0 32px rgba(0,0,0,.08)}
+.panel-hd{padding:24px 24px 0;position:relative;flex-shrink:0}
+.panel-title{font-size:16px;font-weight:600;color:#111;margin-bottom:3px}
+.panel-sub{font-size:13px;color:#999;margin-bottom:24px}
+.panel-close{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:7px;border:1px solid #D8D8D4;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#888}
+.panel-body{padding:0 24px;flex:1;overflow-y:auto}
+.panel-foot{padding:16px 24px;border-top:1px solid #EBEBEB;display:flex;gap:10px;flex-shrink:0}
+.panel-foot .btn-s{flex:1;padding:10px;justify-content:center;display:flex}
+.panel-foot .btn-p{flex:2;padding:10px;justify-content:center;display:flex}
+
+/* Form */
+.fg{margin-bottom:18px}
+.lbl{font-size:12px;font-weight:500;color:#333;display:block;margin-bottom:6px}
+.opt{font-weight:400;color:#C0C0BC;font-size:11px;margin-left:3px}
+.inp{width:100%;border:1px solid #DDDDD9;border-radius:8px;padding:9px 12px;font-size:13px;color:#111;font-family:inherit;outline:none;background:#FAFAF8;transition:border .12s}
+.inp:focus{border-color:#4F46E5;background:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.07)}
+.inp::placeholder{color:#C0C0BC}
+textarea.inp{resize:none;line-height:1.6}
+.char-count{font-size:11px;color:#C0C0BC;text-align:right;margin-top:4px}
+.hint{font-size:11px;color:#aaa;margin-top:5px;line-height:1.5}
+.select-wrap{position:relative}
+.select-wrap::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#aaa;pointer-events:none;font-size:12px}
+select.inp{appearance:none;cursor:pointer;padding-right:30px}
+.option-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
+
+/* Skeleton */
+.skeleton{background:linear-gradient(90deg,#F0F0ED 25%,#E8E8E5 50%,#F0F0ED 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:14px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-row td{padding:14px}
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <h3>Features Page — Design States</h3>
+  <div class="legend-grid">
+    <div class="legend-item"><span>State 1</span> — All tab with features</div>
+    <div class="legend-item"><span>State 2</span> — Draft tab</div>
+    <div class="legend-item"><span>State 3</span> — Add Feature panel open</div>
+    <div class="legend-item"><span>State 4</span> — Empty state (no features)</div>
+    <div class="legend-item"><span>State 5</span> — Empty search results</div>
+    <div class="legend-item"><span>State 6</span> — Loading skeleton</div>
+  </div>
+</div>
+
+<div class="switcher">
+  <button class="sw on" onclick="show('all',this)">State 1 — All tab</button>
+  <button class="sw" onclick="show('draft',this)">State 2 — Draft tab</button>
+  <button class="sw" onclick="show('panel',this)">State 3 — Add Feature panel</button>
+  <button class="sw" onclick="show('empty',this)">State 4 — Empty state</button>
+  <button class="sw" onclick="show('nosearch',this)">State 5 — No search results</button>
+  <button class="sw" onclick="show('loading',this)">State 6 — Loading</button>
+</div>
+
+<div class="browser">
+  <div class="chrome">
+    <div class="dot" style="background:#FF5F57"></div>
+    <div class="dot" style="background:#FEBC2E"></div>
+    <div class="dot" style="background:#28C840"></div>
+    <div class="url-bar">localhost:5173/projects/uuid/features</div>
+  </div>
+
+  <!-- STATE 1: All tab -->
+  <div class="screen on" id="s-all">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav">
+        <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+        <div class="ni"><span class="ni-ic">🎫</span>Features</div>
+        <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+        <div class="ni"><span class="ni-ic">↗</span>Export</div>
+        <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+      </div>
+      <div class="s-foot">
+        <div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div></div>
+        <div class="logout-btn"><span>→</span>Sign out</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Mobile App v3.2</span> <span class="bc-sep">›</span> Features</div>
+        <div class="topbar-right">
+          <button class="btn-p">＋ Add Feature</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="search-row">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" placeholder="Search features..." value="login" />
+          </div>
+          <span class="date-label">From</span>
+          <input type="date" class="date-input" value="2026-05-01" />
+          <span class="date-label">To</span>
+          <input type="date" class="date-input" value="2026-05-31" />
+        </div>
+        <div class="tabs">
+          <button class="tab on">All <span class="tab-count">8</span></button>
+          <button class="tab">Draft <span class="tab-count">3</span></button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature Name</th>
+                <th>Type</th>
+                <th>Date <span class="sort-icon">↓</span></th>
+                <th>Test Cases</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="feat-name">User can log in with email and password</div><div class="feat-id">FT-001</div></td>
+                <td><span class="badge badge-new"><span class="badge-dot dot-new"></span>New Feature</span></td>
+                <td style="color:#666;font-size:12.5px;white-space:nowrap">12 May 2026</td>
+                <td><span class="tc-count">12</span></td>
+                <td><span class="badge badge-final">Final</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">User can reset password via email link</div><div class="feat-id">FT-002</div></td>
+                <td><span class="badge badge-new"><span class="badge-dot dot-new"></span>New Feature</span></td>
+                <td style="color:#666;font-size:12.5px;white-space:nowrap">11 May 2026</td>
+                <td><span class="tc-count">8</span></td>
+                <td><span class="badge badge-final">Final</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">Fix login redirect loop after session expiry</div><div class="feat-id">FT-003</div></td>
+                <td><span class="badge badge-bug"><span class="badge-dot dot-bug"></span>Bug</span></td>
+                <td style="color:#666;font-size:12.5px;white-space:nowrap">10 May 2026</td>
+                <td><span class="tc-count">5</span></td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">User can register with work email</div><div class="feat-id">FT-004</div></td>
+                <td><span class="badge badge-new"><span class="badge-dot dot-new"></span>New Feature</span></td>
+                <td style="color:#666;font-size:12.5px;white-space:nowrap">9 May 2026</td>
+                <td><span class="tc-zero">0</span></td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">Fix duplicate account creation on slow network</div><div class="feat-id">FT-005</div></td>
+                <td><span class="badge badge-bug"><span class="badge-dot dot-bug"></span>Bug</span></td>
+                <td style="color:#666;font-size:12.5px;white-space:nowrap">8 May 2026</td>
+                <td><span class="tc-count">3</span></td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="page-info">Showing 1–5 of 8 features</div>
+            <div class="page-btns">
+              <button class="page-btn">‹</button>
+              <button class="page-btn on">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 2: Draft tab -->
+  <div class="screen" id="s-draft">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Mobile App v3.2</span> <span class="bc-sep">›</span> Features</div>
+      </div>
+      <div class="content">
+        <div class="search-row">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="Search features..."/></div>
+          <span class="date-label">From</span><input type="date" class="date-input"/>
+          <span class="date-label">To</span><input type="date" class="date-input"/>
+        </div>
+        <div class="tabs">
+          <button class="tab">All <span class="tab-count">8</span></button>
+          <button class="tab on">Draft <span class="tab-count">3</span></button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature Name</th>
+                <th>Type</th>
+                <th>Date <span class="sort-icon">↓</span></th>
+                <th>Test Cases</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="feat-name">Fix login redirect loop after session expiry</div><div class="feat-id">FT-003</div></td>
+                <td><span class="badge badge-bug"><span class="badge-dot dot-bug"></span>Bug</span></td>
+                <td style="color:#666;font-size:12.5px">10 May 2026</td>
+                <td><span class="tc-count">5</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">User can register with work email</div><div class="feat-id">FT-004</div></td>
+                <td><span class="badge badge-new"><span class="badge-dot dot-new"></span>New Feature</span></td>
+                <td style="color:#666;font-size:12.5px">9 May 2026</td>
+                <td><span class="tc-zero">0</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="feat-name">Fix duplicate account creation on slow network</div><div class="feat-id">FT-005</div></td>
+                <td><span class="badge badge-bug"><span class="badge-dot dot-bug"></span>Bug</span></td>
+                <td style="color:#666;font-size:12.5px">8 May 2026</td>
+                <td><span class="tc-count">3</span></td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="page-info">Showing 1–3 of 3 draft features</div>
+            <div class="page-btns"><button class="page-btn on">1</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 3: Add Feature panel -->
+  <div class="screen" id="s-panel" style="position:relative">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div></div>
+    </div>
+    <div class="main" style="opacity:.3;pointer-events:none">
+      <div class="topbar"><div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Mobile App v3.2</span> <span class="bc-sep">›</span> Features</div></div>
+      <div class="content">
+        <div class="tabs"><button class="tab on">All <span class="tab-count">8</span></button><button class="tab">Draft <span class="tab-count">3</span></button></div>
+      </div>
+    </div>
+    <div class="panel-overlay">
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-close">✕</div>
+          <div class="panel-title">Add Feature</div>
+          <div class="panel-sub">Create a user story or bug to generate test cases against</div>
+        </div>
+        <div class="panel-body">
+          <div class="fg">
+            <label class="lbl">Feature name</label>
+            <textarea class="inp" rows="3" placeholder="e.g. User can log in with email and password">User can update their profile picture</textarea>
+            <div class="char-count">37 / 200</div>
+            <div class="hint">Write this as a user story title or bug description</div>
+          </div>
+          <div class="fg">
+            <label class="lbl">Feature type</label>
+            <div class="select-wrap">
+              <select class="inp">
+                <option>🔵 New Feature</option>
+                <option>🔴 Bug</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="lbl">Project</label>
+            <div class="select-wrap">
+              <select class="inp">
+                <option selected>Mobile App v3.2</option>
+                <option>Web Portal Redesign</option>
+                <option>Payment API Integration</option>
+              </select>
+            </div>
+            <div class="hint">The project this feature belongs to</div>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <button class="btn-s">Cancel</button>
+          <button class="btn-p">Add Feature →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 4: Empty state -->
+  <div class="screen" id="s-empty">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Payment API Integration</span> <span class="bc-sep">›</span> Features</div>
+        <div class="topbar-right"><button class="btn-p">＋ Add Feature</button></div>
+      </div>
+      <div class="content" style="display:flex;flex-direction:column">
+        <div class="search-row">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="Search features..." disabled style="opacity:.5"/></div>
+        </div>
+        <div class="tabs">
+          <button class="tab on">All <span class="tab-count" style="background:#EBEBEB;color:#888">0</span></button>
+          <button class="tab">Draft <span class="tab-count" style="background:#EBEBEB;color:#888">0</span></button>
+        </div>
+        <div class="empty-full">
+          <div class="empty-card">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No features yet</div>
+            <div class="empty-sub">Add a user story or bug title to start writing test cases for this project.</div>
+            <button class="btn-p" style="width:100%;justify-content:center;padding:10px">＋ Add your first feature</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 5: No search results -->
+  <div class="screen" id="s-nosearch">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Mobile App v3.2</span> <span class="bc-sep">›</span> Features</div>
+        <div class="topbar-right"><button class="btn-p">＋ Add Feature</button></div>
+      </div>
+      <div class="content" style="display:flex;flex-direction:column">
+        <div class="search-row">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" value="payment gateway"/></div>
+          <span class="date-label">From</span><input type="date" class="date-input"/>
+          <span class="date-label">To</span><input type="date" class="date-input"/>
+        </div>
+        <div class="tabs">
+          <button class="tab on">All <span class="tab-count">8</span></button>
+          <button class="tab">Draft <span class="tab-count">3</span></button>
+        </div>
+        <div class="empty-full">
+          <div class="empty-card">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">No features match your search</div>
+            <div class="empty-sub">No results for "payment gateway". Try a different name or adjust the date range.</div>
+            <button class="clear-btn">Clear filters</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 6: Loading skeleton -->
+  <div class="screen" id="s-loading">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="user-row"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="bc-sep">›</span> <span class="bc-current">Mobile App v3.2</span> <span class="bc-sep">›</span> Features</div>
+        <div class="topbar-right"><button class="btn-p">＋ Add Feature</button></div>
+      </div>
+      <div class="content">
+        <div class="search-row">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="Search features..." disabled style="opacity:.5"/></div>
+        </div>
+        <div class="tabs">
+          <button class="tab on">All</button>
+          <button class="tab">Draft</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature Name</th><th>Type</th><th>Date</th><th>Test Cases</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="sk-row"><td><div class="skeleton" style="width:70%;margin-bottom:6px"></div><div class="skeleton" style="width:30%;height:10px"></div></td><td><div class="skeleton" style="width:80px"></div></td><td><div class="skeleton" style="width:70px"></div></td><td><div class="skeleton" style="width:24px"></div></td><td><div class="skeleton" style="width:50px"></div></td><td></td></tr>
+              <tr class="sk-row"><td><div class="skeleton" style="width:55%;margin-bottom:6px"></div><div class="skeleton" style="width:25%;height:10px"></div></td><td><div class="skeleton" style="width:60px"></div></td><td><div class="skeleton" style="width:70px"></div></td><td><div class="skeleton" style="width:24px"></div></td><td><div class="skeleton" style="width:50px"></div></td><td></td></tr>
+              <tr class="sk-row"><td><div class="skeleton" style="width:80%;margin-bottom:6px"></div><div class="skeleton" style="width:20%;height:10px"></div></td><td><div class="skeleton" style="width:40px"></div></td><td><div class="skeleton" style="width:70px"></div></td><td><div class="skeleton" style="width:24px"></div></td><td><div class="skeleton" style="width:50px"></div></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'))
+  document.querySelectorAll('.sw').forEach(b => b.classList.remove('on'))
+  document.getElementById('s-' + id).classList.add('on')
+  btn.classList.add('on')
+}
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import ProjectsPage from './pages/ProjectsPage'
 import TemplatePage from './pages/TemplatePage'
+import FeaturesPage from './pages/FeaturesPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useAuthStore } from './store/authStore'
 import { authAPI } from './api/auth'
@@ -68,6 +69,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <TemplatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/features"
+          element={
+            <ProtectedRoute>
+              <FeaturesPage />
             </ProtectedRoute>
           }
         />

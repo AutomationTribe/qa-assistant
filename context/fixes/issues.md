@@ -64,3 +64,30 @@ Unable to route to the template builder after creating a project
 3. Modified the `handleCreate` method to capture the returned project and navigate to `/projects/${project.id}/template` after successfully closing the modal
 
 Now when a project is created, the user is automatically routed to the template builder page for that project.
+
+#Issue 07 - ✅ FIXED
+POST to /api/v1/projects/:projectId/features fails with "Cannot read properties of undefined (reading 'create')"
+
+**Root cause:** Two issues combined:
+1. Stale compiled `.js` files from Phase 4 and Phase 5 were being served by Vite
+2. The Prisma client was not regenerated after the Feature model was added to schema.prisma, so the running server process didn't have the Feature model in its Prisma client
+
+**Solution:**
+1. Deleted stale compiled files (6 files total):
+   - client/src/api/templates.js
+   - client/src/components/AddFieldModal.js
+   - client/src/components/TemplatePreviewModal.js
+   - client/src/components/ui/Input.js
+   - client/src/pages/TemplatePage.js
+   - client/src/store/templateStore.js
+
+2. Regenerated Prisma client: `npx prisma generate`
+   - This updated the Prisma client to include the Feature model
+   - Verified migration 20260507105500_add_features was applied to database
+   - Confirmed database schema is up to date
+
+**Action required:** Restart both dev servers:
+   - Client: Stop and `npm run dev` in client/
+   - Server: Stop and `npm run dev` in server/
+   
+The server process must restart to use the newly generated Prisma client.

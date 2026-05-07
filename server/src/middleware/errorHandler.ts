@@ -42,12 +42,22 @@ export const errorHandler = (
     code = 'VALIDATION_ERROR'
     message = err.issues[0]?.message || 'Validation error'
   } else if (err instanceof Error) {
-    statusCode = 500
-    code = 'INTERNAL_ERROR'
-    message =
-      process.env.NODE_ENV === 'production'
-        ? 'Something went wrong'
-        : err.message
+    if (err.name === 'NotFoundError') {
+      statusCode = 404
+      code = 'NOT_FOUND'
+      message = err.message
+    } else if (err.name === 'UnauthorizedError') {
+      statusCode = 403
+      code = 'FORBIDDEN'
+      message = err.message
+    } else {
+      statusCode = 500
+      code = 'INTERNAL_ERROR'
+      message =
+        process.env.NODE_ENV === 'production'
+          ? 'Something went wrong'
+          : err.message
+    }
   }
 
   logger.error(`${code}: ${message}`, { error: err })

@@ -50,6 +50,7 @@ model Project {
   updatedAt      DateTime              @updatedAt
   deletedAt      DateTime?
   tickets        Ticket[]
+  features       Feature[]
   jiraConnection JiraConnection?
   template       TestCaseTemplate?
 }
@@ -97,8 +98,10 @@ enum TicketSource {
 
 model TestCase {
   id             String           @id @default(uuid())
-  ticketId       String
-  ticket         Ticket           @relation(fields: [ticketId], references: [id])
+  ticketId       String?
+  ticket         Ticket?          @relation(fields: [ticketId], references: [id])
+  featureId      String?
+  feature        Feature?         @relation(fields: [featureId], references: [id])
   projectId      String
   title          String
   priority       Priority         @default(MEDIUM)
@@ -128,6 +131,29 @@ enum TestType {
 enum GeneratedBy {
   LLM
   HUMAN
+}
+
+model Feature {
+  id        String        @id @default(uuid())
+  name      String
+  type      FeatureType
+  status    FeatureStatus @default(DRAFT)
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id])
+  testCases TestCase[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+}
+
+enum FeatureType {
+  NEW_FEATURE
+  BUG
+}
+
+enum FeatureStatus {
+  DRAFT
+  FINAL
 }
 
 model TestCaseVersion {
