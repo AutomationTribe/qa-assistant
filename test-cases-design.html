@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Regi — Test Cases Page Design</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:#E8E8E5;padding:20px;min-height:100vh}
+
+/* Legend */
+.legend{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;max-width:1100px;margin-left:auto;margin-right:auto;border:1px solid #DDDDD9}
+.legend h3{font-size:13px;font-weight:600;color:#111;margin-bottom:8px}
+.legend-items{display:flex;gap:20px;flex-wrap:wrap}
+.legend-item{font-size:12px;color:#666}
+.legend-item span{font-weight:500;color:#111}
+
+/* Switcher */
+.switcher{display:flex;gap:8px;margin-bottom:16px;max-width:1100px;margin-left:auto;margin-right:auto}
+.sw{font-size:12px;padding:6px 16px;border-radius:8px;border:1px solid #C8C8C4;background:#fff;color:#666;cursor:pointer;font-family:inherit;transition:all .15s}
+.sw.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+
+/* Browser */
+.browser{background:#fff;border-radius:14px;border:1px solid #D0D0CC;box-shadow:0 8px 40px rgba(0,0,0,.1);overflow:hidden;max-width:1100px;margin:0 auto}
+.chrome{height:38px;background:#F2F2EF;border-bottom:1px solid #DDDDD9;display:flex;align-items:center;gap:7px;padding:0 14px}
+.dot{width:11px;height:11px;border-radius:50%}
+.url{flex:1;max-width:400px;height:22px;background:#E4E4E0;border-radius:5px;margin:0 auto;display:flex;align-items:center;padding:0 10px;font-size:11px;color:#888}
+
+/* Screen */
+.screen{display:none}
+.screen.on{display:flex}
+
+/* Sidebar */
+.sidebar{width:208px;background:#FAFAF8;border-right:1px solid #EBEBEB;padding:22px 14px;display:flex;flex-direction:column;flex-shrink:0;min-height:640px}
+.s-brand{font-size:15px;font-weight:700;color:#111;display:flex;align-items:center;gap:8px;margin-bottom:26px}
+.s-dot{width:8px;height:8px;border-radius:50%;background:#4F46E5}
+.nav{display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:#777;cursor:pointer;transition:all .12s}
+.ni.on{background:#EEEDF8;color:#4F46E5;font-weight:500}
+.ni-ic{font-size:13px;width:16px;text-align:center}
+.s-foot{margin-top:auto;border-top:1px solid #EBEBEB;padding-top:12px;display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;border-radius:50%;background:#4F46E5;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u-name{font-size:12px;font-weight:500;color:#111}
+.u-role{font-size:10px;color:#aaa}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:640px}
+.topbar{height:54px;border-bottom:1px solid #EBEBEB;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+.breadcrumb{font-size:13px;color:#999;display:flex;align-items:center;gap:6px}
+.breadcrumb span{color:#111;font-weight:500}
+.breadcrumb-sep{color:#D0D0CC}
+.tb-right{display:flex;align-items:center;gap:10px}
+.btn-p{background:#4F46E5;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-s{background:#fff;color:#444;border:1px solid #D0D0CC;border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.search{height:32px;border:1px solid #D8D8D4;border-radius:8px;padding:0 10px 0 30px;font-size:12.5px;color:#111;font-family:inherit;outline:none;background:#FAFAF8;width:200px;position:relative}
+
+/* Content */
+.content{flex:1;padding:20px 22px;background:#F7F7F4;overflow-y:auto}
+
+/* Stats row */
+.stats{display:flex;gap:10px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid #EBEBEB;border-radius:10px;padding:12px 16px;flex:1}
+.stat-val{font-size:20px;font-weight:600;color:#111;margin-bottom:2px}
+.stat-lbl{font-size:11px;color:#999}
+.stat-sub{font-size:11px;color:#059669;margin-top:2px}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.toolbar-left{display:flex;align-items:center;gap:8px}
+.filter-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid #D8D8D4;border-radius:8px;background:#fff;font-size:12px;color:#555;cursor:pointer;font-family:inherit}
+.filter-btn.active{border-color:#4F46E5;background:#EEEDF8;color:#4F46E5}
+.result-count{font-size:12px;color:#999}
+
+/* Search wrapper */
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#aaa}
+
+/* Table */
+.table-wrap{background:#fff;border:1px solid #EBEBEB;border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead{background:#FAFAF8;border-bottom:1px solid #EBEBEB}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+th:first-child{padding-left:16px}
+th.check-col{width:36px;padding:10px 8px 10px 16px}
+td{padding:12px 14px;border-bottom:1px solid #F2F2EF;color:#333;vertical-align:top;line-height:1.5}
+td:first-child{padding-left:16px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF9}
+tr.selected td{background:#F5F4FD}
+
+/* Checkbox */
+.cb{width:15px;height:15px;border:1.5px solid #D0D0CC;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.cb.checked{background:#4F46E5;border-color:#4F46E5;color:#fff;font-size:9px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
+.badge-high{background:#FEF2F2;color:#DC2626}
+.badge-med{background:#FFFBEB;color:#B45309}
+.badge-low{background:#ECFDF5;color:#059669}
+.badge-pos{background:#EFF6FF;color:#2563EB}
+.badge-neg{background:#FDF4FF;color:#9333EA}
+.badge-edge{background:#F0FDF4;color:#16A34A}
+.badge-gray{background:#F5F5F3;color:#666}
+
+/* Steps preview */
+.steps-preview{color:#666;font-size:12px;line-height:1.7}
+.steps-preview .step{display:flex;gap:6px}
+.step-num{color:#aaa;flex-shrink:0;font-size:11px;padding-top:1px}
+.more-steps{font-size:11px;color:#aaa;margin-top:2px;cursor:pointer}
+.more-steps:hover{color:#4F46E5}
+
+/* Title cell */
+.title-cell{font-weight:500;color:#111;font-size:13px;margin-bottom:2px;line-height:1.4}
+.title-id{font-size:10.5px;color:#bbb;font-family:monospace}
+
+/* Actions */
+.row-actions{display:flex;gap:4px;opacity:0}
+tr:hover .row-actions{opacity:1}
+.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid #E4E4E0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#888;transition:all .12s}
+.icon-btn:hover{background:#EEEDF8;border-color:#C4C2F4;color:#4F46E5}
+.icon-btn.danger:hover{background:#FEF2F2;border-color:#FECACA;color:#EF4444}
+
+/* Bulk action bar */
+.bulk-bar{background:#1A1A1A;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;margin-bottom:12px;border-radius:10px}
+.bulk-bar-left{display:flex;align-items:center;gap:12px}
+.bulk-btn{padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font-size:12px;cursor:pointer;font-family:inherit;transition:all .12s}
+.bulk-btn:hover{background:rgba(255,255,255,.1)}
+.bulk-btn.danger{border-color:rgba(239,68,68,.5);color:#FCA5A5}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #EBEBEB;background:#FAFAF8}
+.page-info{font-size:12px;color:#999}
+.page-btns{display:flex;gap:4px}
+.page-btn{width:30px;height:30px;border-radius:7px;border:1px solid #D8D8D4;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#555;font-family:inherit}
+.page-btn.on{background:#4F46E5;border-color:#4F46E5;color:#fff}
+.page-btn:hover:not(.on){background:#F5F5F3}
+
+/* Empty state */
+.empty-wrap{display:flex;align-items:center;justify-content:center;padding:80px 20px;background:#F7F7F4;flex:1}
+.empty-card{background:#fff;border:1px solid #EBEBEB;border-radius:16px;padding:48px 40px;text-align:center;max-width:440px;width:100%}
+.empty-icon-wrap{width:64px;height:64px;border-radius:16px;background:#EEEDF8;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px}
+.empty-title{font-size:17px;font-weight:600;color:#111;margin-bottom:8px}
+.empty-sub{font-size:13.5px;color:#888;line-height:1.7;margin-bottom:24px}
+.empty-actions{display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty-hint{font-size:12px;color:#bbb;margin-top:8px}
+.divider{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0}
+.divider-line{flex:1;height:1px;background:#EBEBEB}
+.divider-text{font-size:11px;color:#C8C8C4}
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <h3>Test Cases Page — Design States</h3>
+  <div class="legend-items">
+    <div class="legend-item"><span>State 1</span> — Table with test cases (dynamic template columns)</div>
+    <div class="legend-item"><span>State 2</span> — Table with rows selected (bulk action bar)</div>
+    <div class="legend-item"><span>State 3</span> — Empty state (no test cases yet)</div>
+  </div>
+</div>
+
+<div class="switcher">
+  <button class="sw on" onclick="show('table',this)">State 1 — Test cases table</button>
+  <button class="sw" onclick="show('bulk',this)">State 2 — Rows selected</button>
+  <button class="sw" onclick="show('empty',this)">State 3 — Empty state</button>
+</div>
+
+<div class="browser">
+  <div class="chrome">
+    <div class="dot" style="background:#FF5F57"></div>
+    <div class="dot" style="background:#FEBC2E"></div>
+    <div class="dot" style="background:#28C840"></div>
+    <div class="url" id="urlbar">localhost:5173/projects/uuid/testcases</div>
+  </div>
+
+  <!-- STATE 1: Table -->
+  <div class="screen on" id="s-table">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav">
+        <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+        <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+        <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+        <div class="ni"><span class="ni-ic">↗</span>Export</div>
+        <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+      </div>
+      <div class="s-foot">
+        <div class="av">JS</div>
+        <div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">
+          Projects <span class="breadcrumb-sep">›</span>
+          <span>Mobile App v3.2</span>
+          <span class="breadcrumb-sep">›</span>
+          Test Cases
+        </div>
+        <div class="tb-right">
+          <div class="search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="search" placeholder="Search test cases..." />
+          </div>
+          <button class="btn-s">↗ Export CSV</button>
+          <button class="btn-p">＋ Add Test Case</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-val">24</div>
+            <div class="stat-lbl">Total test cases</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">18</div>
+            <div class="stat-lbl">Passing</div>
+            <div class="stat-sub">75% pass rate</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" style="color:#DC2626">4</div>
+            <div class="stat-lbl">High priority</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">3</div>
+            <div class="stat-lbl">Tickets covered</div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <button class="filter-btn active">All <span style="background:#4F46E5;color:#fff;border-radius:999px;padding:0 6px;font-size:10px;margin-left:2px">24</span></button>
+            <button class="filter-btn">High priority</button>
+            <button class="filter-btn">Positive</button>
+            <button class="filter-btn">Negative</button>
+            <button class="filter-btn">Edge case</button>
+          </div>
+          <div class="result-count">Showing 1–8 of 24</div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="check-col"><div class="cb"></div></th>
+                <th>Test Title</th>
+                <th>Priority</th>
+                <th>Test Type</th>
+                <th>Test Steps</th>
+                <th>Expected Result</th>
+                <th>Last Edited</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 -->
+              <tr>
+                <td><div class="cb"></div></td>
+                <td>
+                  <div class="title-cell">Successful login with valid credentials</div>
+                  <div class="title-id">TC-001</div>
+                </td>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td><span class="badge badge-pos">Positive</span></td>
+                <td>
+                  <div class="steps-preview">
+                    <div class="step"><span class="step-num">1.</span>Navigate to /login</div>
+                    <div class="step"><span class="step-num">2.</span>Enter valid credentials</div>
+                    <div class="step"><span class="step-num">3.</span>Click Sign In</div>
+                  </div>
+                  <div class="more-steps">+1 more step</div>
+                </td>
+                <td style="max-width:200px;color:#555;font-size:12px;line-height:1.5">User is redirected to dashboard and session persists</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">2 hours ago</td>
+                <td>
+                  <div class="row-actions">
+                    <div class="icon-btn" title="Edit">✏</div>
+                    <div class="icon-btn" title="Duplicate">⧉</div>
+                    <div class="icon-btn danger" title="Delete">🗑</div>
+                  </div>
+                </td>
+              </tr>
+              <!-- Row 2 -->
+              <tr>
+                <td><div class="cb"></div></td>
+                <td>
+                  <div class="title-cell">Login fails with incorrect password</div>
+                  <div class="title-id">TC-002</div>
+                </td>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td><span class="badge badge-neg">Negative</span></td>
+                <td>
+                  <div class="steps-preview">
+                    <div class="step"><span class="step-num">1.</span>Navigate to /login</div>
+                    <div class="step"><span class="step-num">2.</span>Enter valid email, wrong password</div>
+                    <div class="step"><span class="step-num">3.</span>Click Sign In</div>
+                  </div>
+                </td>
+                <td style="max-width:200px;color:#555;font-size:12px;line-height:1.5">Error message displayed, user stays on login page</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">2 hours ago</td>
+                <td>
+                  <div class="row-actions">
+                    <div class="icon-btn">✏</div>
+                    <div class="icon-btn">⧉</div>
+                    <div class="icon-btn danger">🗑</div>
+                  </div>
+                </td>
+              </tr>
+              <!-- Row 3 -->
+              <tr>
+                <td><div class="cb"></div></td>
+                <td>
+                  <div class="title-cell">Login with empty email field</div>
+                  <div class="title-id">TC-003</div>
+                </td>
+                <td><span class="badge badge-med">MEDIUM</span></td>
+                <td><span class="badge badge-edge">Edge Case</span></td>
+                <td>
+                  <div class="steps-preview">
+                    <div class="step"><span class="step-num">1.</span>Navigate to /login</div>
+                    <div class="step"><span class="step-num">2.</span>Leave email blank</div>
+                    <div class="step"><span class="step-num">3.</span>Click Sign In</div>
+                  </div>
+                </td>
+                <td style="max-width:200px;color:#555;font-size:12px;line-height:1.5">Inline validation error shown under email field</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">3 hours ago</td>
+                <td>
+                  <div class="row-actions">
+                    <div class="icon-btn">✏</div>
+                    <div class="icon-btn">⧉</div>
+                    <div class="icon-btn danger">🗑</div>
+                  </div>
+                </td>
+              </tr>
+              <!-- Row 4 -->
+              <tr>
+                <td><div class="cb"></div></td>
+                <td>
+                  <div class="title-cell">Password reset email is sent</div>
+                  <div class="title-id">TC-004</div>
+                </td>
+                <td><span class="badge badge-med">MEDIUM</span></td>
+                <td><span class="badge badge-pos">Positive</span></td>
+                <td>
+                  <div class="steps-preview">
+                    <div class="step"><span class="step-num">1.</span>Click Forgot password</div>
+                    <div class="step"><span class="step-num">2.</span>Enter registered email</div>
+                    <div class="step"><span class="step-num">3.</span>Click Send reset link</div>
+                  </div>
+                  <div class="more-steps">+2 more steps</div>
+                </td>
+                <td style="max-width:200px;color:#555;font-size:12px;line-height:1.5">Confirmation shown, email received within 60 seconds</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">Yesterday</td>
+                <td>
+                  <div class="row-actions">
+                    <div class="icon-btn">✏</div>
+                    <div class="icon-btn">⧉</div>
+                    <div class="icon-btn danger">🗑</div>
+                  </div>
+                </td>
+              </tr>
+              <!-- Row 5 -->
+              <tr>
+                <td><div class="cb"></div></td>
+                <td>
+                  <div class="title-cell">Session expires after 15 minutes of inactivity</div>
+                  <div class="title-id">TC-005</div>
+                </td>
+                <td><span class="badge badge-low">LOW</span></td>
+                <td><span class="badge badge-edge">Edge Case</span></td>
+                <td>
+                  <div class="steps-preview">
+                    <div class="step"><span class="step-num">1.</span>Log in successfully</div>
+                    <div class="step"><span class="step-num">2.</span>Leave app idle for 15 min</div>
+                  </div>
+                  <div class="more-steps">+3 more steps</div>
+                </td>
+                <td style="max-width:200px;color:#555;font-size:12px;line-height:1.5">User is redirected to login with session expired message</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">Yesterday</td>
+                <td>
+                  <div class="row-actions">
+                    <div class="icon-btn">✏</div>
+                    <div class="icon-btn">⧉</div>
+                    <div class="icon-btn danger">🗑</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Pagination -->
+          <div class="pagination">
+            <div class="page-info">Showing 1–5 of 24 test cases</div>
+            <div class="page-btns">
+              <button class="page-btn">‹</button>
+              <button class="page-btn on">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 2: Bulk selection -->
+  <div class="screen" id="s-bulk">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav">
+        <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+        <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+        <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+        <div class="ni"><span class="ni-ic">↗</span>Export</div>
+        <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+      </div>
+      <div class="s-foot">
+        <div class="av">JS</div>
+        <div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">
+          Projects <span class="breadcrumb-sep">›</span>
+          <span>Mobile App v3.2</span>
+          <span class="breadcrumb-sep">›</span>
+          Test Cases
+        </div>
+        <div class="tb-right">
+          <div class="search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="search" placeholder="Search test cases..." />
+          </div>
+          <button class="btn-s">↗ Export CSV</button>
+          <button class="btn-p">＋ Add Test Case</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Bulk action bar -->
+        <div class="bulk-bar">
+          <div class="bulk-bar-left">
+            <span style="color:#aaa;font-size:12px">3 selected</span>
+            <button class="bulk-btn">↗ Export selected</button>
+            <button class="bulk-btn">⧉ Duplicate</button>
+            <button class="bulk-btn danger">🗑 Delete selected</button>
+          </div>
+          <button class="bulk-btn" onclick="">✕ Clear selection</button>
+        </div>
+
+        <!-- Table with selected rows -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="check-col"><div class="cb checked">✓</div></th>
+                <th>Test Title</th>
+                <th>Priority</th>
+                <th>Test Type</th>
+                <th>Test Steps</th>
+                <th>Expected Result</th>
+                <th>Last Edited</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="selected">
+                <td><div class="cb checked">✓</div></td>
+                <td><div class="title-cell">Successful login with valid credentials</div><div class="title-id">TC-001</div></td>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td><span class="badge badge-pos">Positive</span></td>
+                <td><div class="steps-preview"><div class="step"><span class="step-num">1.</span>Navigate to /login</div><div class="step"><span class="step-num">2.</span>Enter valid credentials</div></div><div class="more-steps">+2 more</div></td>
+                <td style="max-width:180px;color:#555;font-size:12px">Redirected to dashboard</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">2 hours ago</td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr class="selected">
+                <td><div class="cb checked">✓</div></td>
+                <td><div class="title-cell">Login fails with incorrect password</div><div class="title-id">TC-002</div></td>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td><span class="badge badge-neg">Negative</span></td>
+                <td><div class="steps-preview"><div class="step"><span class="step-num">1.</span>Navigate to /login</div><div class="step"><span class="step-num">2.</span>Enter wrong password</div></div></td>
+                <td style="max-width:180px;color:#555;font-size:12px">Error message shown</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">2 hours ago</td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr>
+                <td><div class="cb"></div></td>
+                <td><div class="title-cell">Login with empty email field</div><div class="title-id">TC-003</div></td>
+                <td><span class="badge badge-med">MEDIUM</span></td>
+                <td><span class="badge badge-edge">Edge Case</span></td>
+                <td><div class="steps-preview"><div class="step"><span class="step-num">1.</span>Navigate to /login</div><div class="step"><span class="step-num">2.</span>Leave email blank</div></div></td>
+                <td style="max-width:180px;color:#555;font-size:12px">Validation error shown</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">3 hours ago</td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+              <tr class="selected">
+                <td><div class="cb checked">✓</div></td>
+                <td><div class="title-cell">Password reset email is sent</div><div class="title-id">TC-004</div></td>
+                <td><span class="badge badge-med">MEDIUM</span></td>
+                <td><span class="badge badge-pos">Positive</span></td>
+                <td><div class="steps-preview"><div class="step"><span class="step-num">1.</span>Click Forgot password</div><div class="step"><span class="step-num">2.</span>Enter registered email</div></div><div class="more-steps">+2 more</div></td>
+                <td style="max-width:180px;color:#555;font-size:12px">Email received within 60s</td>
+                <td style="color:#aaa;font-size:11.5px;white-space:nowrap">Yesterday</td>
+                <td><div class="row-actions"><div class="icon-btn">✏</div><div class="icon-btn danger">🗑</div></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="page-info">Showing 1–4 of 24 · 3 selected</div>
+            <div class="page-btns">
+              <button class="page-btn">‹</button>
+              <button class="page-btn on">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 3: Empty state -->
+  <div class="screen" id="s-empty">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav">
+        <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+        <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+        <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+        <div class="ni"><span class="ni-ic">↗</span>Export</div>
+        <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+      </div>
+      <div class="s-foot">
+        <div class="av">JS</div>
+        <div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">
+          Projects <span class="breadcrumb-sep">›</span>
+          <span>Payment API Integration</span>
+          <span class="breadcrumb-sep">›</span>
+          Test Cases
+        </div>
+        <div class="tb-right">
+          <button class="btn-p">＋ Add Test Case</button>
+        </div>
+      </div>
+      <div class="empty-wrap">
+        <div class="empty-card">
+          <div class="empty-icon-wrap">✓</div>
+          <div class="empty-title">No test cases yet</div>
+          <div class="empty-sub">
+            Test cases for this project will appear here.<br>
+            Add one manually or generate them from a ticket using AI.
+          </div>
+          <div class="empty-actions">
+            <button class="btn-p" style="width:100%;justify-content:center;padding:10px">
+              ✦ Generate from ticket
+            </button>
+            <div class="divider">
+              <div class="divider-line"></div>
+              <div class="divider-text">or</div>
+              <div class="divider-line"></div>
+            </div>
+            <button class="btn-s" style="width:100%;justify-content:center;padding:10px">
+              ＋ Add manually
+            </button>
+          </div>
+          <div class="empty-hint">
+            Tip: Generate from a ticket to let AI write your test cases instantly
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'))
+  document.querySelectorAll('.sw').forEach(b => b.classList.remove('on'))
+  document.getElementById('s-' + id).classList.add('on')
+  btn.classList.add('on')
+}
+</script>
+</body>
+</html>

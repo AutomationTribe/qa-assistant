@@ -14,7 +14,7 @@ interface ProjectState {
     baseUrl?: string
     templateConfig: TemplateConfig
     logins?: ProjectLogin[]
-  }) => Promise<void>
+  }) => Promise<Project>
   selectProject: (project: Project) => void
 }
 
@@ -39,6 +39,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
     try {
       const project = await apiCreateProject(data)
       set((state) => ({ projects: [project, ...state.projects] }))
+      return project
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create project'
       set({ error: message })

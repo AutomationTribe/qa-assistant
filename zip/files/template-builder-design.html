@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Regi — Template Builder Design</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:#E8E8E5;padding:20px;min-height:100vh}
+.legend{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;max-width:960px;margin-left:auto;margin-right:auto;border:1px solid #DDDDD9}
+.legend h3{font-size:13px;font-weight:600;color:#111;margin-bottom:8px}
+.legend-items{display:flex;gap:16px;flex-wrap:wrap}
+.legend-item{font-size:12px;color:#666}
+.legend-item span{font-weight:500;color:#111}
+.switcher{display:flex;gap:8px;margin-bottom:16px;max-width:960px;margin-left:auto;margin-right:auto;flex-wrap:wrap}
+.sw{font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid #C8C8C4;background:#fff;color:#666;cursor:pointer;font-family:inherit;transition:all .15s}
+.sw.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+.browser{background:#fff;border-radius:14px;border:1px solid #D0D0CC;box-shadow:0 8px 40px rgba(0,0,0,.1);overflow:hidden;max-width:960px;margin:0 auto}
+.chrome{height:38px;background:#F2F2EF;border-bottom:1px solid #DDDDD9;display:flex;align-items:center;gap:7px;padding:0 14px}
+.dot{width:11px;height:11px;border-radius:50%}
+.url{flex:1;max-width:340px;height:22px;background:#E4E4E0;border-radius:5px;margin:0 auto;display:flex;align-items:center;padding:0 10px;font-size:11px;color:#888}
+.screen{display:none}
+.screen.on{display:flex}
+/* Sidebar */
+.sidebar{width:208px;background:#FAFAF8;border-right:1px solid #EBEBEB;padding:22px 14px;display:flex;flex-direction:column;flex-shrink:0}
+.s-brand{font-size:15px;font-weight:700;color:#111;display:flex;align-items:center;gap:8px;margin-bottom:26px}
+.s-dot{width:8px;height:8px;border-radius:50%;background:#4F46E5}
+.nav{display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:#777;cursor:pointer}
+.ni.on{background:#EEEDF8;color:#4F46E5;font-weight:500}
+.ni-ic{font-size:13px;width:16px;text-align:center}
+.s-foot{margin-top:auto;border-top:1px solid #EBEBEB;padding-top:12px;display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;border-radius:50%;background:#4F46E5;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u-name{font-size:12px;font-weight:500;color:#111}
+.u-role{font-size:10px;color:#aaa}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;min-height:560px;overflow:hidden}
+.topbar{height:54px;border-bottom:1px solid #EBEBEB;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+.breadcrumb{font-size:13px;color:#999;display:flex;align-items:center;gap:6px}
+.breadcrumb span{color:#111;font-weight:500}
+.breadcrumb-sep{color:#D0D0CC}
+.tb-actions{display:flex;gap:8px}
+.btn-p{background:#4F46E5;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-s{background:#fff;color:#444;border:1px solid #D0D0CC;border-radius:8px;padding:7px 14px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.content{flex:1;padding:22px;overflow-y:auto;background:#F7F7F4}
+/* Page header */
+.page-hd{margin-bottom:20px}
+.page-hd h2{font-size:16px;font-weight:600;color:#111;margin-bottom:4px}
+.page-hd p{font-size:13px;color:#888;line-height:1.6}
+/* Field cards */
+.field-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.field-card{background:#fff;border:1px solid #EBEBEB;border-radius:11px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:all .15s}
+.field-card:hover{border-color:#C4C2F4;box-shadow:0 2px 10px rgba(79,70,229,.07)}
+.drag-handle{color:#C8C8C4;font-size:14px;cursor:grab;padding-top:2px;flex-shrink:0;display:flex;flex-direction:column;gap:2px}
+.drag-dot{width:4px;height:4px;border-radius:50%;background:#C8C8C4}
+.drag-dots{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.field-info{flex:1;min-width:0}
+.field-name{font-size:13.5px;font-weight:500;color:#111;margin-bottom:3px}
+.field-key{font-family:monospace;font-size:11px;color:#999;margin-bottom:6px}
+.field-desc{font-size:12px;color:#777;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:500}
+.badge-type{background:#F0F0ED;color:#555}
+.badge-req{background:#ECFDF5;color:#059669}
+.badge-opt{background:#F5F5F3;color:#999}
+.field-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.icon-btn{width:28px;height:28px;border-radius:7px;border:1px solid #E8E8E4;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#777;transition:all .12s}
+.icon-btn:hover{background:#F5F5F3;border-color:#C8C8C4}
+.icon-btn.danger:hover{background:#FEF2F2;border-color:#FECACA;color:#EF4444}
+.order-btns{display:flex;flex-direction:column;gap:2px}
+/* Add field btn */
+.add-field-btn{width:100%;padding:11px;border:1.5px dashed #D0D0CC;border-radius:10px;background:#fff;font-size:13px;color:#777;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
+.add-field-btn:hover{border-color:#4F46E5;color:#4F46E5;background:#FAFAF8}
+/* Empty state */
+.empty{text-align:center;padding:48px 20px;background:#fff;border-radius:12px;border:1px dashed #D0D0CC}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:500;color:#333;margin-bottom:6px}
+.empty-sub{font-size:13px;color:#999;line-height:1.6;margin-bottom:16px}
+/* Modal overlay */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.22);z-index:10;display:flex;align-items:flex-start;justify-content:center;padding-top:40px}
+.modal{background:#fff;border-radius:14px;width:480px;max-height:calc(100% - 80px);overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-hd{padding:22px 24px 0;position:relative}
+.modal-title{font-size:16px;font-weight:600;color:#111;margin-bottom:4px}
+.modal-sub{font-size:13px;color:#999;margin-bottom:20px}
+.modal-close{position:absolute;top:18px;right:18px;width:28px;height:28px;border-radius:7px;border:1px solid #D8D8D4;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#888}
+.modal-body{padding:0 24px 20px}
+.modal-foot{padding:14px 24px;border-top:1px solid #EBEBEB;display:flex;gap:10px}
+.modal-foot .btn-s{flex:1}
+.modal-foot .btn-p{flex:2}
+/* Form */
+.fg{margin-bottom:16px}
+.lbl{font-size:12px;font-weight:500;color:#333;display:block;margin-bottom:5px}
+.opt-lbl{font-weight:400;color:#bbb;font-size:11px;margin-left:3px}
+.inp{width:100%;border:1px solid #DDDDD9;border-radius:8px;padding:8px 11px;font-size:13px;color:#111;font-family:inherit;outline:none;background:#FAFAF8}
+.inp:focus{border-color:#4F46E5;background:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.07)}
+.inp::placeholder{color:#C0C0BC}
+.hint{font-size:11px;color:#aaa;margin-top:4px}
+.inp-mono{font-family:monospace;font-size:12px}
+/* Type grid */
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.type-card{border:1.5px solid #DDDDD9;border-radius:9px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .12s}
+.type-card.on{border-color:#4F46E5;background:#EEEDF8}
+.type-card-ic{font-size:16px;margin-bottom:4px}
+.type-card-lbl{font-size:10.5px;font-weight:500;color:#444}
+.type-card.on .type-card-lbl{color:#4F46E5}
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#FAFAF8;border:1px solid #EBEBEB;border-radius:8px}
+.toggle-label{font-size:13px;color:#333;font-weight:500}
+.toggle-sub{font-size:11px;color:#999;margin-top:1px}
+.toggle{width:38px;height:22px;background:#4F46E5;border-radius:999px;position:relative;cursor:pointer;flex-shrink:0}
+.toggle-knob{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:3px;right:3px;transition:all .15s}
+/* Tags */
+.tags{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid #DDDDD9;border-radius:8px;background:#FAFAF8;min-height:38px;cursor:text}
+.tag{display:flex;align-items:center;gap:5px;background:#EEEDF8;color:#4F46E5;font-size:12px;padding:2px 8px;border-radius:999px}
+.tag-x{cursor:pointer;font-size:10px;color:#7C70E8}
+/* Preview modal */
+.preview-field{padding:12px 0;border-bottom:1px solid #F0F0ED}
+.preview-field:last-child{border-bottom:none}
+.preview-field-name{font-size:12px;font-weight:500;color:#333;margin-bottom:4px}
+.preview-field-val{font-size:12.5px;color:#999;font-style:italic;line-height:1.6}
+.preview-steps{font-size:12px;color:#999;font-style:italic;line-height:2}
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <h3>Template Builder — Design States</h3>
+  <div class="legend-items">
+    <div class="legend-item"><span>State 1</span> — Template with default fields (after project created)</div>
+    <div class="legend-item"><span>State 2</span> — Add Field modal open</div>
+    <div class="legend-item"><span>State 3</span> — Template preview modal</div>
+    <div class="legend-item"><span>State 4</span> — Empty state (no fields yet)</div>
+  </div>
+</div>
+
+<div class="switcher">
+  <button class="sw on" onclick="show('default',this)">State 1 — Default fields</button>
+  <button class="sw" onclick="show('addfield',this)">State 2 — Add field modal</button>
+  <button class="sw" onclick="show('preview',this)">State 3 — Preview modal</button>
+  <button class="sw" onclick="show('empty',this)">State 4 — Empty state</button>
+</div>
+
+<div class="browser">
+  <div class="chrome">
+    <div class="dot" style="background:#FF5F57"></div>
+    <div class="dot" style="background:#FEBC2E"></div>
+    <div class="dot" style="background:#28C840"></div>
+    <div class="url" id="urlbar">localhost:5173/projects/uuid/template</div>
+  </div>
+
+  <!-- STATE 1: Default fields -->
+  <div class="screen on" id="s-default">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav">
+        <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+        <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+        <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+        <div class="ni"><span class="ni-ic">↗</span>Export</div>
+        <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+      </div>
+      <div class="s-foot"><div class="av">JS</div><div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="breadcrumb-sep">›</span> <span>Mobile App v3.2</span> <span class="breadcrumb-sep">›</span> Template</div>
+        <div class="tb-actions">
+          <button class="btn-s">Preview</button>
+          <button class="btn-p">Save Template</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="page-hd">
+          <h2>Test Case Template</h2>
+          <p>Define the fields the AI will fill for every test case in this project.<br>Drag to reorder. The AI reads your field descriptions to know what to generate.</p>
+        </div>
+        <div class="field-list">
+          <!-- Field 1 -->
+          <div class="field-card">
+            <div class="drag-handle"><div class="drag-dots"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div></div>
+            <div class="field-info">
+              <div class="field-name">Test Title</div>
+              <div class="field-key">key: test_title</div>
+              <div class="field-desc">A concise, descriptive name for this test case</div>
+              <div class="field-badges"><span class="badge badge-type">TEXT</span><span class="badge badge-req">Required</span></div>
+            </div>
+            <div class="field-actions">
+              <div class="order-btns"><div class="icon-btn">↑</div><div class="icon-btn">↓</div></div>
+              <div class="icon-btn">✏</div>
+              <div class="icon-btn danger">🗑</div>
+            </div>
+          </div>
+          <!-- Field 2 -->
+          <div class="field-card">
+            <div class="drag-handle"><div class="drag-dots"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div></div>
+            <div class="field-info">
+              <div class="field-name">Preconditions</div>
+              <div class="field-key">key: preconditions</div>
+              <div class="field-desc">Any setup or state required before running this test</div>
+              <div class="field-badges"><span class="badge badge-type">TEXTAREA</span><span class="badge badge-opt">Optional</span></div>
+            </div>
+            <div class="field-actions">
+              <div class="order-btns"><div class="icon-btn">↑</div><div class="icon-btn">↓</div></div>
+              <div class="icon-btn">✏</div>
+              <div class="icon-btn danger">🗑</div>
+            </div>
+          </div>
+          <!-- Field 3 -->
+          <div class="field-card" style="border-color:#C4C2F4;box-shadow:0 2px 10px rgba(79,70,229,.07)">
+            <div class="drag-handle"><div class="drag-dots"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div></div>
+            <div class="field-info">
+              <div class="field-name">Test Steps</div>
+              <div class="field-key">key: test_steps</div>
+              <div class="field-desc">Numbered steps the tester must follow to execute this test case</div>
+              <div class="field-badges"><span class="badge badge-type">STEPS</span><span class="badge badge-req">Required</span></div>
+            </div>
+            <div class="field-actions">
+              <div class="order-btns"><div class="icon-btn">↑</div><div class="icon-btn">↓</div></div>
+              <div class="icon-btn">✏</div>
+              <div class="icon-btn danger">🗑</div>
+            </div>
+          </div>
+          <!-- Field 4 -->
+          <div class="field-card">
+            <div class="drag-handle"><div class="drag-dots"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div></div>
+            <div class="field-info">
+              <div class="field-name">Expected Result</div>
+              <div class="field-key">key: expected_result</div>
+              <div class="field-desc">What should happen if the test passes</div>
+              <div class="field-badges"><span class="badge badge-type">TEXTAREA</span><span class="badge badge-req">Required</span></div>
+            </div>
+            <div class="field-actions">
+              <div class="order-btns"><div class="icon-btn">↑</div><div class="icon-btn">↓</div></div>
+              <div class="icon-btn">✏</div>
+              <div class="icon-btn danger">🗑</div>
+            </div>
+          </div>
+          <!-- Field 5 -->
+          <div class="field-card">
+            <div class="drag-handle"><div class="drag-dots"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div></div>
+            <div class="field-info">
+              <div class="field-name">Priority</div>
+              <div class="field-key">key: priority</div>
+              <div class="field-desc">The importance of this test case — HIGH, MEDIUM, or LOW</div>
+              <div class="field-badges"><span class="badge badge-type">SELECT</span><span class="badge badge-req">Required</span><span class="badge" style="background:#EFF6FF;color:#3B82F6">HIGH · MEDIUM · LOW</span></div>
+            </div>
+            <div class="field-actions">
+              <div class="order-btns"><div class="icon-btn">↑</div><div class="icon-btn">↓</div></div>
+              <div class="icon-btn">✏</div>
+              <div class="icon-btn danger">🗑</div>
+            </div>
+          </div>
+        </div>
+        <button class="add-field-btn">＋ Add field</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 2: Add field modal -->
+  <div class="screen" id="s-addfield" style="position:relative">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div>
+    </div>
+    <div class="main" style="opacity:.3;pointer-events:none">
+      <div class="topbar"><div class="breadcrumb">Projects <span class="breadcrumb-sep">›</span> <span>Mobile App v3.2</span> <span class="breadcrumb-sep">›</span> Template</div></div>
+      <div class="content"><div class="page-hd"><h2>Test Case Template</h2></div></div>
+    </div>
+    <div class="overlay">
+      <div class="modal">
+        <div class="modal-hd">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Add Field</div>
+          <div class="modal-sub">Define a new field the AI will fill for each test case</div>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <label class="lbl">Field name</label>
+            <input class="inp" value="Severity Rating" />
+          </div>
+          <div class="fg">
+            <label class="lbl">Field key <span class="opt-lbl">auto-generated</span></label>
+            <input class="inp inp-mono" value="severity_rating" />
+            <div class="hint">Used by the AI to identify this field. Letters, numbers, underscores only.</div>
+          </div>
+          <div class="fg">
+            <label class="lbl">Field type</label>
+            <div class="type-grid">
+              <div class="type-card"><div class="type-card-ic">T</div><div class="type-card-lbl">Text</div></div>
+              <div class="type-card"><div class="type-card-ic">¶</div><div class="type-card-lbl">Long Text</div></div>
+              <div class="type-card"><div class="type-card-ic">#</div><div class="type-card-lbl">Steps</div></div>
+              <div class="type-card on"><div class="type-card-ic">▼</div><div class="type-card-lbl">Select</div></div>
+              <div class="type-card"><div class="type-card-ic">☑</div><div class="type-card-lbl">Multi-select</div></div>
+              <div class="type-card"><div class="type-card-ic">✓</div><div class="type-card-lbl">Yes / No</div></div>
+              <div class="type-card"><div class="type-card-ic">0</div><div class="type-card-lbl">Number</div></div>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="lbl">Options</label>
+            <div class="tags">
+              <div class="tag">Critical <span class="tag-x">×</span></div>
+              <div class="tag">Major <span class="tag-x">×</span></div>
+              <div class="tag">Minor <span class="tag-x">×</span></div>
+              <div class="tag">Trivial <span class="tag-x">×</span></div>
+            </div>
+            <div class="hint">Press Enter to add each option</div>
+          </div>
+          <div class="fg">
+            <label class="lbl">AI instruction <span class="opt-lbl">optional</span></label>
+            <textarea class="inp" rows="2" placeholder="Describe what the AI should put in this field...">Rate the severity of the impact if this test case fails</textarea>
+            <div class="hint">The better you describe it, the better the AI output</div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Required field</div><div class="toggle-sub">AI must fill this field for every test case</div></div>
+            <div class="toggle"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-s">Cancel</button>
+          <button class="btn-p">Add Field</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 3: Preview modal -->
+  <div class="screen" id="s-preview" style="position:relative">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div>
+    </div>
+    <div class="main" style="opacity:.3;pointer-events:none">
+      <div class="topbar"><div class="breadcrumb">Projects <span class="breadcrumb-sep">›</span> <span>Mobile App v3.2</span> <span class="breadcrumb-sep">›</span> Template</div></div>
+      <div class="content"><div class="page-hd"><h2>Test Case Template</h2></div></div>
+    </div>
+    <div class="overlay">
+      <div class="modal" style="width:440px">
+        <div class="modal-hd">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Template Preview</div>
+          <div class="modal-sub">This is how a generated test case will appear with your current fields</div>
+        </div>
+        <div class="modal-body">
+          <div class="preview-field">
+            <div class="preview-field-name">Test Title</div>
+            <div class="preview-field-val">User can log in with valid email and password</div>
+          </div>
+          <div class="preview-field">
+            <div class="preview-field-name">Preconditions</div>
+            <div class="preview-field-val">User must be registered. App must be accessible at the base URL. User must not be currently logged in.</div>
+          </div>
+          <div class="preview-field">
+            <div class="preview-field-name">Test Steps</div>
+            <div class="preview-steps">1. Navigate to the login page<br>2. Enter a valid registered email address<br>3. Enter the correct password<br>4. Click the Sign In button</div>
+          </div>
+          <div class="preview-field">
+            <div class="preview-field-name">Expected Result</div>
+            <div class="preview-field-val">User is redirected to the dashboard. A welcome message is displayed. The session is persisted on refresh.</div>
+          </div>
+          <div class="preview-field">
+            <div class="preview-field-name">Priority</div>
+            <div class="preview-field-val"><span class="badge" style="background:#FEF2F2;color:#DC2626;font-style:normal">HIGH</span></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-p" style="width:100%">Looks good — save template</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 4: Empty state -->
+  <div class="screen" id="s-empty">
+    <div class="sidebar">
+      <div class="s-brand"><span class="s-dot"></span>Regi</div>
+      <div class="nav"><div class="ni on"><span class="ni-ic">▣</span>Projects</div></div>
+      <div class="s-foot"><div class="av">JS</div><div><div class="u-name">Jane Smith</div></div></div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="breadcrumb">Projects <span class="breadcrumb-sep">›</span> <span>Payment API</span> <span class="breadcrumb-sep">›</span> Template</div>
+        <div class="tb-actions">
+          <button class="btn-s" disabled style="opacity:.4">Preview</button>
+          <button class="btn-p" disabled style="opacity:.4">Save Template</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="page-hd">
+          <h2>Test Case Template</h2>
+          <p>Define the fields the AI will fill for every test case in this project.</p>
+        </div>
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">No fields defined yet</div>
+          <div class="empty-sub">Add fields to define the structure of your test cases.<br>The AI will fill each field when generating test cases for your tickets.</div>
+          <button class="btn-p">＋ Add your first field</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function show(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'))
+  document.querySelectorAll('.sw').forEach(b=>b.classList.remove('on'))
+  document.getElementById('s-'+id).classList.add('on')
+  btn.classList.add('on')
+}
+document.querySelectorAll('.type-card').forEach(c=>{
+  c.addEventListener('click',()=>{
+    c.closest('.type-grid').querySelectorAll('.type-card').forEach(x=>x.classList.remove('on'))
+    c.classList.add('on')
+  })
+})
+</script>
+</body>
+</html>

@@ -17,6 +17,17 @@
 - One file per backend resource: testcases.ts, tickets.ts, auth.ts, projects.ts
 - Use the Axios instance from src/api/client.ts (has auth headers + interceptors)
 
+## API path rules — CRITICAL
+- baseURL is set to http://localhost:3001/api/v1 in all environments
+- Every path in src/api/ files must start with / and the resource name only
+- CORRECT:   `apiClient.post('/auth/login')`
+- CORRECT:   `apiClient.get('/projects')`
+- WRONG:     `apiClient.post('/v1/auth/login')`     ← adds duplicate /v1
+- WRONG:     `apiClient.post('/api/v1/auth/login')` ← adds duplicate /api/v1
+- NEVER call apiClient directly from a page component
+- ALL API calls go through a file in src/api/ — one file per resource
+  auth.ts, projects.ts, templates.ts, tickets.ts, testcases.ts, export.ts
+
 ## Styling
 - Tailwind only — no inline styles, no separate CSS files, no CSS modules
 - Use shadcn/ui class variants for component states

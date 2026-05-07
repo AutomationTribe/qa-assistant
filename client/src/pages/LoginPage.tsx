@@ -4,10 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/store/authStore'
+import { authAPI } from '@/api/auth'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import apiClient from '@/api/client'
-import type { AuthUser } from '@/types/api'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address').min(1, 'Email is required'),
@@ -47,11 +46,7 @@ export default function LoginPage() {
 
   const onLoginSubmit = async (data: LoginFormData) => {
     try {
-      const response = await apiClient.post<{ accessToken: string; user: AuthUser }>(
-        '/v1/auth/login',
-        data
-      )
-      const { accessToken, user } = response.data
+      const { accessToken, user } = await authAPI.login(data.email, data.password)
       setAuth(user, accessToken)
       navigate('/projects', { replace: true })
     } catch (error) {
@@ -63,21 +58,9 @@ export default function LoginPage() {
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
     try {
-      await apiClient.post('/v1/auth/register', {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        workspaceName: data.workspaceName,
-      })
+      await authAPI.register(data.email, data.name, data.password, data.workspaceName)
 
-      const loginResponse = await apiClient.post<{ accessToken: string; user: AuthUser }>(
-        '/v1/auth/login',
-        {
-          email: data.email,
-          password: data.password,
-        }
-      )
-      const { accessToken, user } = loginResponse.data
+      const { accessToken, user } = await authAPI.login(data.email, data.password)
       setAuth(user, accessToken)
       navigate('/projects', { replace: true })
     } catch (error) {
@@ -143,20 +126,22 @@ export default function LoginPage() {
           {/* Sign In Form */}
           {activeTab === 'signin' && (
             <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-              <Input
-                type="email"
-                label="Email address"
-                placeholder="you@example.com"
-                {...loginForm.register('email')}
-                error={loginForm.formState.errors.email?.message}
-              />
-              <Input
-                type="password"
-                label="Password"
-                placeholder="••••••••"
-                {...loginForm.register('password')}
-                error={loginForm.formState.errors.password?.message}
-              />
+              <div className="flex flex-col gap-4 mb-4">
+                <Input
+                  type="email"
+                  label="Email address"
+                  placeholder="you@example.com"
+                  {...loginForm.register('email')}
+                  error={loginForm.formState.errors.email?.message}
+                />
+                <Input
+                  type="password"
+                  label="Password"
+                  placeholder="••••••••"
+                  {...loginForm.register('password')}
+                  error={loginForm.formState.errors.password?.message}
+                />
+              </div>
               <Button fullWidth loading={loginForm.formState.isSubmitting}>
                 Sign in →
               </Button>
@@ -172,36 +157,38 @@ export default function LoginPage() {
           {/* Create Account Form */}
           {activeTab === 'signup' && (
             <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-              <Input
-                type="text"
-                label="Full name"
-                placeholder="Your name"
-                {...registerForm.register('name')}
-                error={registerForm.formState.errors.name?.message}
-              />
-              <Input
-                type="email"
-                label="Work email"
-                placeholder="you@company.com"
-                {...registerForm.register('email')}
-                error={registerForm.formState.errors.email?.message}
-              />
-              <Input
-                type="password"
-                label="Password"
-                placeholder="••••••••"
-                hint="Use at least 8 characters"
-                {...registerForm.register('password')}
-                error={registerForm.formState.errors.password?.message}
-              />
-              <Input
-                type="text"
-                label="Workspace name"
-                placeholder="Your team's workspace"
-                hint="Your team's shared workspace in Regi"
-                {...registerForm.register('workspaceName')}
-                error={registerForm.formState.errors.workspaceName?.message}
-              />
+              <div className="flex flex-col gap-4 mb-4">
+                <Input
+                  type="text"
+                  label="Full name"
+                  placeholder="Your name"
+                  {...registerForm.register('name')}
+                  error={registerForm.formState.errors.name?.message}
+                />
+                <Input
+                  type="email"
+                  label="Work email"
+                  placeholder="you@company.com"
+                  {...registerForm.register('email')}
+                  error={registerForm.formState.errors.email?.message}
+                />
+                <Input
+                  type="password"
+                  label="Password"
+                  placeholder="••••••••"
+                  hint="Use at least 8 characters"
+                  {...registerForm.register('password')}
+                  error={registerForm.formState.errors.password?.message}
+                />
+                <Input
+                  type="text"
+                  label="Workspace name"
+                  placeholder="Your team's workspace"
+                  hint="Your team's shared workspace in Regi"
+                  {...registerForm.register('workspaceName')}
+                  error={registerForm.formState.errors.workspaceName?.message}
+                />
+              </div>
               <Button fullWidth loading={registerForm.formState.isSubmitting}>
                 Create account →
               </Button>

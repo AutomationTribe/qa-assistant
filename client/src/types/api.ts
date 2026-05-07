@@ -28,6 +28,27 @@ export type Project = {
   _count?: { tickets: number; testCases?: number }
 }
 
+export type FieldType = 'TEXT' | 'TEXTAREA' | 'STEPS' | 'SELECT' | 'MULTISELECT' | 'BOOLEAN' | 'NUMBER'
+
+export type TestCaseField = {
+  id: string
+  name: string
+  key: string
+  type: FieldType
+  description?: string
+  required: boolean
+  order: number
+  options?: string[]
+}
+
+export type TestCaseTemplate = {
+  id: string
+  projectId: string
+  fields: TestCaseField[]
+  createdAt: string
+  updatedAt: string
+}
+
 export type ApiError = {
   error: { code: string; message: string }
 }

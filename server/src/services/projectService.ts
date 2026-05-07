@@ -33,6 +33,59 @@ interface UpdateProjectPayload {
   logins?: ProjectLogin[]
 }
 
+const DEFAULT_TEMPLATE_FIELDS = [
+  {
+    name: 'Test Title',
+    key: 'test_title',
+    type: 'TEXT' as const,
+    description: 'A concise, descriptive name for this test case',
+    required: true,
+    order: 0,
+  },
+  {
+    name: 'Preconditions',
+    key: 'preconditions',
+    type: 'TEXTAREA' as const,
+    description: 'Any setup or state required before running this test',
+    required: false,
+    order: 1,
+  },
+  {
+    name: 'Test Steps',
+    key: 'test_steps',
+    type: 'STEPS' as const,
+    description: 'Numbered steps the tester must follow to execute this test case',
+    required: true,
+    order: 2,
+  },
+  {
+    name: 'Expected Result',
+    key: 'expected_result',
+    type: 'TEXTAREA' as const,
+    description: 'What should happen if the test passes',
+    required: true,
+    order: 3,
+  },
+  {
+    name: 'Priority',
+    key: 'priority',
+    type: 'SELECT' as const,
+    description: 'The importance of this test case',
+    required: true,
+    order: 4,
+    options: ['HIGH', 'MEDIUM', 'LOW'],
+  },
+  {
+    name: 'Test Type',
+    key: 'test_type',
+    type: 'SELECT' as const,
+    description: 'The category of this test case',
+    required: true,
+    order: 5,
+    options: ['POSITIVE', 'NEGATIVE', 'EDGE_CASE'],
+  },
+]
+
 export const projectService = {
   async listProjects(workspaceId: string) {
     const projects = await prisma.project.findMany({
@@ -82,6 +135,23 @@ export const projectService = {
         workspaceId,
         templateConfig,
         logins: logins && logins.length > 0 ? logins : null,
+        template: {
+          create: {
+            fields: {
+              createMany: {
+                data: DEFAULT_TEMPLATE_FIELDS.map((f) => ({
+                  name: f.name,
+                  key: f.key,
+                  type: f.type,
+                  description: f.description,
+                  required: f.required,
+                  order: f.order,
+                  options: f.options ? f.options : null,
+                })),
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,

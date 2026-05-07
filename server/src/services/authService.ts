@@ -198,7 +198,17 @@ export const authService = {
       expiresIn: '7d',
     })
 
-    return { accessToken, refreshToken: newRefreshToken }
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        workspaceId: user.workspaceId,
+      },
+    }
   },
 }
 

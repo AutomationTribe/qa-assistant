@@ -1,9 +1,50 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import ProjectsPage from './pages/ProjectsPage'
+import TemplatePage from './pages/TemplatePage'
 import ProtectedRoute from './components/ProtectedRoute'
+import { useAuthStore } from './store/authStore'
+import { authAPI } from './api/auth'
 
 export default function App() {
+  const { setAuth, clearAuth } = useAuthStore()
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    const recoverSession = async () => {
+      try {
+        const { accessToken, user } = await authAPI.refresh()
+        setAuth(user, accessToken)
+      } catch {
+        clearAuth()
+      } finally {
+        setChecking(false)
+      }
+    }
+
+    recoverSession()
+  }, [])
+
+  if (checking) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: '#F0F0ED',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '13px',
+          color: '#999',
+        }}
+      >
+        Loading...
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter
       future={{
@@ -19,6 +60,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/template"
+          element={
+            <ProtectedRoute>
+              <TemplatePage />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Regi — UI Design Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: #F0F0ED; min-height: 100vh; padding: 24px; }
+
+  /* Switcher */
+  .switcher { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .sw { font-size: 12.5px; padding: 7px 16px; border-radius: 8px; border: 1px solid #D0D0CC; background: #fff; color: #666; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .sw.on { background: #1A1A1A; color: #fff; border-color: #1A1A1A; }
+
+  /* Browser chrome */
+  .browser { background: #fff; border-radius: 14px; border: 1px solid #D8D8D4; box-shadow: 0 8px 40px rgba(0,0,0,.12); overflow: hidden; max-width: 960px; margin: 0 auto; }
+  .chrome { height: 40px; background: #F4F4F1; border-bottom: 1px solid #E0E0DC; display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-r { background: #FF5F57; }
+  .dot-y { background: #FEBC2E; }
+  .dot-g { background: #28C840; }
+  .url-bar { flex: 1; max-width: 320px; height: 24px; background: #E8E8E4; border-radius: 6px; margin: 0 auto; display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: #888; }
+
+  /* Screen container */
+  .screen { display: none; }
+  .screen.on { display: flex; }
+
+  /* ── AUTH SCREEN ── */
+  .auth-wrap { display: flex; width: 100%; min-height: 560px; }
+  .auth-left { width: 38%; background: linear-gradient(150deg, #18181B 0%, #312E81 100%); padding: 44px 36px; display: flex; flex-direction: column; justify-content: space-between; }
+  .brand { font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 32px; height: 32px; background: #4F46E5; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+  .tagline { font-size: 12.5px; color: rgba(255,255,255,.45); margin-top: 10px; line-height: 1.6; }
+  .quote { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.75; font-style: italic; border-left: 2px solid rgba(255,255,255,.2); padding-left: 14px; }
+  .quote-attr { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 10px; }
+
+  .auth-right { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .auth-box { width: 100%; max-width: 320px; }
+  .auth-heading { font-size: 22px; font-weight: 600; color: #111; margin-bottom: 4px; }
+  .auth-sub { font-size: 13px; color: #999; margin-bottom: 28px; }
+
+  .tabs { display: flex; border-bottom: 1px solid #EBEBEB; margin-bottom: 24px; }
+  .tab { font-size: 13px; padding: 8px 18px; color: #aaa; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .tab.on { color: #4F46E5; border-bottom-color: #4F46E5; font-weight: 500; }
+
+  .form { display: none; }
+  .form.on { display: block; }
+  .fg { margin-bottom: 15px; }
+  .lbl { font-size: 12px; font-weight: 500; color: #333; display: block; margin-bottom: 5px; }
+  .opt { font-weight: 400; color: #bbb; font-size: 11px; margin-left: 3px; }
+  .inp { width: 100%; border: 1px solid #DDDDD9; border-radius: 8px; padding: 9px 12px; font-size: 13px; color: #111; font-family: inherit; outline: none; transition: border .12s; background: #FAFAF8; }
+  .inp:focus { border-color: #4F46E5; background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.07); }
+  .inp::placeholder { color: #C8C8C4; }
+  .hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+  .btn-main { width: 100%; padding: 10px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; font-size: 13.5px; font-weight: 500; cursor: pointer; font-family: inherit; margin-top: 4px; transition: background .15s; }
+  .btn-main:hover { background: #4338CA; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .help { text-align: center; font-size: 12px; color: #aaa; margin-top: 16px; }
+  .help a { color: #4F46E5; cursor: pointer; font-weight: 500; text-decoration: none; }
+
+  /* ── APP LAYOUT ── */
+  .app { display: flex; width: 100%; min-height: 560px; }
+  .sidebar { width: 210px; background: #FAFAF8; border-right: 1px solid #EBEBEB; padding: 24px 16px; display: flex; flex-direction: column; flex-shrink: 0; }
+  .s-brand { font-size: 15px; font-weight: 700; color: #111; display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+  .s-dot { width: 9px; height: 9px; border-radius: 50%; background: #4F46E5; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .ni { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #777; cursor: pointer; transition: all .12s; }
+  .ni:hover { background: #EFEFEB; color: #111; }
+  .ni.on { background: #EEEDF8; color: #4F46E5; font-weight: 500; }
+  .ni-ic { font-size: 14px; width: 16px; text-align: center; }
+  .s-foot { margin-top: auto; border-top: 1px solid #EBEBEB; padding-top: 14px; display: flex; align-items: center; gap: 9px; }
+  .av { width: 30px; height: 30px; border-radius: 50%; background: #4F46E5; color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .u-name { font-size: 12px; font-weight: 500; color: #111; }
+  .u-role { font-size: 10.5px; color: #aaa; }
+
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 54px; border-bottom: 1px solid #EBEBEB; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .page-title { font-size: 15px; font-weight: 600; color: #111; }
+  .btn-p { background: #4F46E5; color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: inherit; }
+  .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+  /* ── PROJECTS GRID ── */
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .pc { border: 1px solid #EBEBEB; border-radius: 12px; padding: 18px; cursor: pointer; transition: all .15s; background: #fff; }
+  .pc:hover { border-color: #C4C2F4; box-shadow: 0 2px 16px rgba(79,70,229,.1); }
+  .pc-add { border-style: dashed; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 130px; color: #aaa; }
+  .pc-add:hover { border-color: #4F46E5; color: #4F46E5; }
+  .pc-icon { width: 38px; height: 38px; border-radius: 9px; background: #EEEDF8; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+  .pc-name { font-size: 14px; font-weight: 500; color: #111; margin-bottom: 3px; }
+  .pc-meta { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+  .badge { display: inline-block; font-size: 10.5px; padding: 2px 9px; border-radius: 10px; font-weight: 500; }
+  .badge-indigo { background: #EEEDF8; color: #4F46E5; }
+  .badge-green { background: #ECFDF5; color: #059669; }
+  .badge-amber { background: #FFFBEB; color: #B45309; }
+
+  /* ── ADD PROJECT PANEL ── */
+  .panel-wrap { position: relative; }
+  .overlay { position: absolute; inset: 0; background: rgba(0,0,0,.18); z-index: 5; backdrop-filter: blur(1px); }
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 400px; background: #fff; z-index: 10; display: flex; flex-direction: column; border-left: 1px solid #EBEBEB; overflow-y: auto; }
+  .ph { padding: 24px 24px 0; }
+  .panel-title { font-size: 16px; font-weight: 600; color: #111; margin-bottom: 3px; }
+  .panel-sub { font-size: 13px; color: #999; margin-bottom: 24px; }
+  .close { position: absolute; top: 20px; right: 20px; width: 28px; height: 28px; border-radius: 7px; border: 1px solid #D8D8D4; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: #888; }
+  .section-hd { font-size: 10.5px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: .07em; margin: 16px 0 12px; }
+
+  .style-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+  .sb { border: 1.5px solid #D8D8D4; border-radius: 9px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all .15s; }
+  .sb.on { border-color: #4F46E5; background: #EEEDF8; }
+  .sb-ic { font-size: 17px; margin-bottom: 4px; }
+  .sb-lbl { font-size: 11px; font-weight: 500; color: #444; }
+  .sb.on .sb-lbl { color: #4F46E5; }
+
+  .login-card { border: 1px solid #EBEBEB; border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #FAFAF8; position: relative; }
+  .lc-title { font-size: 11px; font-weight: 500; color: #777; margin-bottom: 10px; }
+  .rm { position: absolute; top: 12px; right: 12px; font-size: 11px; color: #EF4444; background: none; border: none; cursor: pointer; font-family: inherit; }
+  .add-lc { width: 100%; padding: 9px; border: 1.5px dashed #DDDDD9; border-radius: 8px; background: none; font-size: 12.5px; color: #888; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .12s; margin-top: 4px; }
+  .add-lc:hover { border-color: #4F46E5; color: #4F46E5; }
+
+  .panel-foot { padding: 16px 24px; border-top: 1px solid #EBEBEB; display: flex; gap: 10px; margin-top: auto; }
+  .btn-cancel { flex: 1; padding: 9px; background: #fff; border: 1px solid #D0D0CC; border-radius: 8px; font-size: 13px; color: #444; cursor: pointer; font-family: inherit; }
+  .btn-create { flex: 2; padding: 9px; background: #4F46E5; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; color: #fff; cursor: pointer; font-family: inherit; }
+  .btn-create:hover { background: #4338CA; }
+
+  .si { font-size: 12px; padding: 7px 10px; }
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <button class="sw on" onclick="show('login',this)">🔐 Login / Register</button>
+  <button class="sw" onclick="show('projects',this)">📁 Projects</button>
+  <button class="sw" onclick="show('addproject',this)">➕ Add Project</button>
+</div>
+
+<div class="browser">
+  <div class="chrome">
+    <div class="dot dot-r"></div>
+    <div class="dot dot-y"></div>
+    <div class="dot dot-g"></div>
+    <div class="url-bar" id="urlbar">localhost:5173/login</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="screen on" id="s-login">
+    <div class="auth-wrap">
+      <div class="auth-left">
+        <div>
+          <div class="brand"><div class="brand-icon">R</div>Regi</div>
+          <div class="tagline">Generate QA test cases from your tickets using AI.<br>Review, edit, and export in seconds.</div>
+        </div>
+        <div>
+          <div class="quote">"Shipping fast without testing is like driving with your eyes closed. Regi helps us move fast and stay safe."</div>
+          <div class="quote-attr">— QA Lead, Fintech startup</div>
+        </div>
+      </div>
+      <div class="auth-right">
+        <div class="auth-box">
+          <div class="auth-heading">Welcome back</div>
+          <div class="auth-sub">Sign in to your Regi workspace</div>
+          <div class="tabs">
+            <div class="tab on" onclick="switchTab('signin',this)">Sign In</div>
+            <div class="tab" onclick="switchTab('register',this)">Create Account</div>
+          </div>
+
+          <div class="form on" id="f-signin">
+            <div class="fg">
+              <label class="lbl">Email address</label>
+              <input class="inp" type="email" placeholder="you@company.com" />
+            </div>
+            <div class="fg">
+              <label class="lbl">Password</label>
+              <input class="inp" type="password" placeholder="••••••••" />
+            </div>
+            <button class="btn-main">Sign in →</button>
+            <div class="help">Forgot password? <a>Reset it</a></div>
+          </div>
+
+          <div class="form" id="f-register">
+            <div class="fg">
+              <label class="lbl">Full name</label>
+              <input class="inp" placeholder="Jane Smith" />
+            </div>
+            <div class="fg">
+              <label class="lbl">Work email</label>
+              <input class="inp" type="email" placeholder="jane@company.com" />
+            </div>
+            <div class="fg">
+              <label class="lbl">Password</label>
+              <input class="inp" type="password" placeholder="Min. 8 characters" />
+              <div class="hint">Use at least 8 characters</div>
+            </div>
+            <div class="fg">
+              <label class="lbl">Workspace name</label>
+              <input class="inp" placeholder="Acme QA Team" />
+              <div class="hint">Your team's shared workspace in Regi</div>
+            </div>
+            <button class="btn-main">Create account →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="screen" id="s-projects">
+    <div class="app">
+      <div class="sidebar">
+        <div class="s-brand"><span class="s-dot"></span>Regi</div>
+        <div class="nav">
+          <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+          <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+          <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+          <div class="ni"><span class="ni-ic">↗</span>Export</div>
+          <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+        </div>
+        <div class="s-foot">
+          <div class="av">JS</div>
+          <div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="topbar">
+          <div class="page-title">Projects</div>
+          <button class="btn-p">+ New Project</button>
+        </div>
+        <div class="content">
+          <div class="pgrid">
+            <div class="pc">
+              <div class="pc-icon">📱</div>
+              <div class="pc-name">Mobile App v3.2</div>
+              <div class="pc-meta">24 tickets · 148 test cases</div>
+              <span class="badge badge-green">BDD</span>
+            </div>
+            <div class="pc">
+              <div class="pc-icon">🌐</div>
+              <div class="pc-name">Web Portal Redesign</div>
+              <div class="pc-meta">11 tickets · 63 test cases</div>
+              <span class="badge badge-indigo">Step by Step</span>
+            </div>
+            <div class="pc">
+              <div class="pc-icon">🔌</div>
+              <div class="pc-name">Payment API Integration</div>
+              <div class="pc-meta">6 tickets · 41 test cases</div>
+              <span class="badge badge-amber">Exploratory</span>
+            </div>
+            <div class="pc pc-add">
+              <div style="font-size:24px">＋</div>
+              <div style="font-size:13px;font-weight:500;">New Project</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PROJECT -->
+  <div class="screen" id="s-addproject">
+    <div class="app panel-wrap" style="flex:1">
+      <div class="sidebar">
+        <div class="s-brand"><span class="s-dot"></span>Regi</div>
+        <div class="nav">
+          <div class="ni on"><span class="ni-ic">▣</span>Projects</div>
+          <div class="ni"><span class="ni-ic">🎫</span>Tickets</div>
+          <div class="ni"><span class="ni-ic">✓</span>Test Cases</div>
+          <div class="ni"><span class="ni-ic">↗</span>Export</div>
+          <div class="ni"><span class="ni-ic">⚙</span>Settings</div>
+        </div>
+        <div class="s-foot">
+          <div class="av">JS</div>
+          <div><div class="u-name">Jane Smith</div><div class="u-role">QA Lead</div></div>
+        </div>
+      </div>
+      <div class="main" style="opacity:.35;pointer-events:none;">
+        <div class="topbar"><div class="page-title">Projects</div></div>
+        <div class="content">
+          <div class="pgrid">
+            <div class="pc"><div class="pc-icon">📱</div><div class="pc-name">Mobile App v3.2</div></div>
+            <div class="pc"><div class="pc-icon">🌐</div><div class="pc-name">Web Portal</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="overlay"></div>
+      <div class="panel">
+        <div class="ph" style="position:relative;">
+          <div class="close">✕</div>
+          <div class="panel-title">New Project</div>
+          <div class="panel-sub">Configure your project and test case generation style.</div>
+
+          <div class="fg">
+            <label class="lbl">Project name</label>
+            <input class="inp" placeholder="e.g. Mobile App v4.0" />
+          </div>
+
+          <div class="fg">
+            <label class="lbl">Description <span class="opt">optional</span></label>
+            <textarea class="inp" rows="2" placeholder="What is being tested? Who are the users?" style="resize:none;"></textarea>
+          </div>
+
+          <div class="fg">
+            <label class="lbl">Base URL <span class="opt">optional</span></label>
+            <input class="inp" placeholder="https://app.yourproduct.com" />
+            <div class="hint">Helps the AI understand the context of your tests</div>
+          </div>
+
+          <div class="section-hd">Test case style</div>
+          <div class="style-row">
+            <div class="sb on" onclick="pickStyle(this)">
+              <div class="sb-ic">📋</div>
+              <div class="sb-lbl">BDD</div>
+            </div>
+            <div class="sb" onclick="pickStyle(this)">
+              <div class="sb-ic">🔢</div>
+              <div class="sb-lbl">Step by Step</div>
+            </div>
+            <div class="sb" onclick="pickStyle(this)">
+              <div class="sb-ic">🔍</div>
+              <div class="sb-lbl">Exploratory</div>
+            </div>
+          </div>
+
+          <div class="section-hd">Test logins <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:#C0C0C0">optional</span></div>
+
+          <div id="logins">
+            <div class="login-card">
+              <div class="lc-title">Login 1</div>
+              <button class="rm">Remove</button>
+              <div class="row2" style="margin-bottom:10px;">
+                <div class="fg" style="margin:0">
+                  <label class="lbl">Username / Email</label>
+                  <input class="inp si" placeholder="admin@app.com" />
+                </div>
+                <div class="fg" style="margin:0">
+                  <label class="lbl">Password</label>
+                  <input class="inp si" type="password" placeholder="••••••" />
+                </div>
+              </div>
+              <div class="fg" style="margin:0">
+                <label class="lbl">Role <span class="opt">optional</span></label>
+                <input class="inp si" placeholder="e.g. Admin, Guest, Manager" />
+                <div class="hint">Used to generate role-specific test scenarios</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="add-lc" onclick="addLogin()">＋ Add another login</button>
+        </div>
+
+        <div class="panel-foot">
+          <button class="btn-cancel">Cancel</button>
+          <button class="btn-create">Create Project →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let loginCount = 1;
+
+  function show(id, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+    document.querySelectorAll('.sw').forEach(b => b.classList.remove('on'));
+    document.getElementById('s-' + id).classList.add('on');
+    btn.classList.add('on');
+    const urls = { login: 'localhost:5173/login', projects: 'localhost:5173/projects', addproject: 'localhost:5173/projects' };
+    document.getElementById('urlbar').textContent = urls[id];
+  }
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.form').forEach(f => f.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('f-' + id).classList.add('on');
+  }
+
+  function pickStyle(el) {
+    document.querySelectorAll('.sb').forEach(b => b.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function addLogin() {
+    loginCount++;
+    const div = document.createElement('div');
+    div.className = 'login-card';
+    div.innerHTML = `
+      <div class="lc-title">Login ${loginCount}</div>
+      <button class="rm" onclick="this.parentElement.remove()">Remove</button>
+      <div class="row2" style="margin-bottom:10px;">
+        <div class="fg" style="margin:0"><label class="lbl">Username / Email</label><input class="inp si" placeholder="user@app.com" /></div>
+        <div class="fg" style="margin:0"><label class="lbl">Password</label><input class="inp si" type="password" placeholder="••••••" /></div>
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="lbl">Role <span class="opt">optional</span></label>
+        <input class="inp si" placeholder="e.g. Viewer, Editor" />
+        <div class="hint">Used to generate role-specific test scenarios</div>
+      </div>`;
+    document.getElementById('logins').appendChild(div);
+  }
+</script>
+</body>
+</html>

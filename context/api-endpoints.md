@@ -107,7 +107,14 @@ Cookie: refreshToken (sent automatically by browser)
 Response 200:
 ```json
 {
-  "accessToken": "eyJhbGci..."
+  "accessToken": "eyJhbGci...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "Jane Smith",
+    "role": "QA_ENGINEER",
+    "workspaceId": "uuid"
+  }
 }
 ```
 
@@ -234,6 +241,210 @@ Response 200:
 
 Errors:
 - 404 NOT_FOUND — project does not exist or does not belong to workspace
+
+---
+
+## Templates — /api/v1/projects/:projectId/template
+All routes require: Authorization: Bearer {accessToken}
+
+### GET /api/v1/projects/:projectId/template
+Get the test case template for a project.
+
+Response 200:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [
+      {
+        "id": "uuid",
+        "name": "Test Title",
+        "key": "test_title",
+        "type": "TEXT",
+        "description": "A concise, descriptive name for this test case",
+        "required": true,
+        "order": 0,
+        "options": null
+      }
+    ],
+    "createdAt": "2026-05-01T12:00:00.000Z",
+    "updatedAt": "2026-05-01T12:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist
+
+---
+
+### POST /api/v1/projects/:projectId/template
+Create a test case template for a project.
+
+Request body:
+```json
+{
+  "fields": [
+    {
+      "name": "Test Title",
+      "key": "test_title",
+      "type": "TEXT",
+      "description": "A concise, descriptive name for this test case",
+      "required": true,
+      "options": null
+    }
+  ]
+}
+```
+
+Response 201:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [
+      {
+        "id": "uuid",
+        "name": "Test Title",
+        "key": "test_title",
+        "type": "TEXT",
+        "description": "A concise, descriptive name for this test case",
+        "required": true,
+        "order": 0,
+        "options": null
+      }
+    ],
+    "createdAt": "2026-05-01T12:00:00.000Z",
+    "updatedAt": "2026-05-01T12:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist
+- 400 INVALID_INPUT — at least one field is required
+- 400 DUPLICATE_KEYS — field keys must be unique
+
+---
+
+### PUT /api/v1/projects/:projectId/template
+Update a test case template (replaces all fields).
+
+Request body:
+```json
+{
+  "fields": [
+    {
+      "name": "Test Title",
+      "key": "test_title",
+      "type": "TEXT",
+      "required": true
+    }
+  ]
+}
+```
+
+Response 200:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [],
+    "updatedAt": "2026-05-01T13:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or template not found
+- 400 INVALID_INPUT — validation failed
+
+---
+
+### POST /api/v1/projects/:projectId/template/fields
+Add a single field to an existing template.
+
+Request body:
+```json
+{
+  "field": {
+    "name": "Priority",
+    "key": "priority",
+    "type": "SELECT",
+    "options": ["HIGH", "MEDIUM", "LOW"],
+    "required": true
+  }
+}
+```
+
+Response 200:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [],
+    "updatedAt": "2026-05-01T13:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project or template does not exist
+- 400 DUPLICATE_KEY — field key already exists
+
+---
+
+### DELETE /api/v1/projects/:projectId/template/fields/:fieldId
+Remove a field from a template.
+
+No request body.
+
+Response 200:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [],
+    "updatedAt": "2026-05-01T13:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — field or template does not exist
+
+---
+
+### PUT /api/v1/projects/:projectId/template/fields/reorder
+Reorder fields in a template.
+
+Request body:
+```json
+{
+  "fieldIds": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+
+Response 200:
+```json
+{
+  "template": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "fields": [],
+    "updatedAt": "2026-05-01T13:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — template not found
+- 400 INVALID_FIELDS — invalid field IDs provided
 
 ---
 

@@ -110,7 +110,7 @@ export const authController = {
       }
 
       // Refresh access token
-      const { accessToken, refreshToken: newRefreshToken } =
+      const { accessToken, refreshToken: newRefreshToken, user } =
         await authService.refreshAccessToken(refreshToken)
 
       // Set new refresh token cookie
@@ -125,6 +125,7 @@ export const authController = {
 
       res.status(200).json({
         accessToken,
+        user,
       })
     } catch (err) {
       if (err instanceof AuthError && err.code === 'UNAUTHORIZED') {

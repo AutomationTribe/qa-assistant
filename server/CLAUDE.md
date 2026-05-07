@@ -23,6 +23,8 @@ JiraConn      id, projectId, accessToken(encrypted), refreshToken(encrypted),
 
 ## API versioning
 All routes must be prefixed: /api/v1/
+NOTE: The client-side Axios baseURL is http://localhost:3001/api/v1
+So client code must call apiClient.post('/auth/login'), NOT '/v1/auth/login'
 
 ## LLM rules
 - All LLM calls go through services/llm/orchestrator.ts only

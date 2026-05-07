@@ -96,6 +96,8 @@ router.post('/login', authController.login)
  *               properties:
  *                 accessToken:
  *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Invalid or missing refresh token
  */

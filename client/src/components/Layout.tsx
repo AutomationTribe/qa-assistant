@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { authAPI } from '@/api/auth'
 
 interface LayoutProps {
   title: string
@@ -9,7 +10,19 @@ interface LayoutProps {
 }
 
 export default function Layout({ title, actions, children }: LayoutProps) {
-  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const { user, clearAuth } = useAuthStore()
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout()
+    } catch {
+      // Even if the server call fails, clear local auth state
+    } finally {
+      clearAuth()
+      navigate('/login')
+    }
+  }
 
   const initials = user ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase() : 'U'
   const roleLabel = user?.role.replace(/_/g, ' ').toLowerCase() || 'User'
@@ -74,14 +87,23 @@ export default function Layout({ title, actions, children }: LayoutProps) {
 
         {/* User Footer */}
         {user && (
-          <div className="px-4 py-6 border-t border-[#EBEBEB] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#EEEDF8] flex items-center justify-center text-[#4F46E5] text-xs font-semibold">
-              {initials}
+          <div className="mt-auto border-t border-[#EBEBEB] pt-3">
+            <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
+              <div className="w-7 h-7 rounded-full bg-[#4F46E5] text-white text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+                {user?.name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-medium text-[#111] truncate">{user?.name}</div>
+                <div className="text-[10px] text-[#aaa]">{user?.role?.replace(/_/g, ' ')}</div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-[#111] truncate">{user.name}</p>
-              <p className="text-[11px] text-[#999] truncate capitalize">{roleLabel}</p>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[12.5px] text-[#777] hover:bg-[#EFEFEB] hover:text-[#111] transition-all cursor-pointer"
+            >
+              <span className="text-[13px] w-4 text-center">→</span>
+              Sign out
+            </button>
           </div>
         )}
       </div>

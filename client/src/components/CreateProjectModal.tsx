@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -10,6 +11,7 @@ interface CreateProjectModalProps {
 }
 
 export default function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
@@ -43,14 +45,31 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
       return
     }
 
+    if (baseUrl.trim()) {
+      try {
+        new URL(baseUrl.trim())
+      } catch {
+        setError('Base URL must be a valid URL (e.g., https://app.example.com)')
+        return
+      }
+    }
+
+    const validLogins = logins
+      .filter((login) => login.username.trim() && login.password.trim())
+      .map((login) => ({
+        username: login.username.trim(),
+        password: login.password.trim(),
+        role: login.role?.trim() || undefined,
+      }))
+
     setIsSubmitting(true)
     try {
-      await createProject({
+      const project = await createProject({
         name: name.trim(),
         description: description.trim() || undefined,
         baseUrl: baseUrl.trim() || undefined,
         templateConfig: { style },
-        logins: logins.length > 0 ? logins : undefined,
+        logins: validLogins.length > 0 ? validLogins : undefined,
       })
       setName('')
       setDescription('')
@@ -58,6 +77,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
       setStyle('bdd')
       setLogins([])
       onClose()
+      navigate(`/projects/${project.id}/template`)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create project'
       setError(message)
