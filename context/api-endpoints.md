@@ -1056,19 +1056,40 @@ Errors:
 
 ---
 
-### POST /api/v1/features/:featureId/testcases/export-zephyr
-Export test cases to Zephyr Scale Cloud. Enqueues them sequentially to avoid rate limits.
+### GET /api/v1/projects/:projectId/zephyr/folders
+Get existing Zephyr Scale test case folders for a project.
 
-Request body (testCaseIds is required):
+Response 200:
 ```json
 {
-  "testCaseIds": "all"
+  "folders": [
+    { "id": 12345, "name": "Sprint 1", "parentId": null },
+    { "id": 12346, "name": "Regression", "parentId": null },
+    { "id": 12347, "name": "P1 Bugs", "parentId": 12345 }
+  ]
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+
+---
+
+### POST /api/v1/features/:featureId/testcases/export-zephyr
+Export test cases to Zephyr Scale Cloud. Optionally nest them in a parent folder. Enqueues them sequentially to avoid rate limits.
+
+Request body (testCaseIds is required, parentFolderId is optional):
+```json
+{
+  "testCaseIds": "all",
+  "parentFolderId": 12345
 }
 ```
 or
 ```json
 {
-  "testCaseIds": ["uuid-1", "uuid-2", "uuid-3"]
+  "testCaseIds": ["uuid-1", "uuid-2", "uuid-3"],
+  "parentFolderId": null
 }
 ```
 

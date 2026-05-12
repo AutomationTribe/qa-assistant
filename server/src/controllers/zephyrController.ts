@@ -86,14 +86,24 @@ export const zephyrController = {
     } catch (err) { next(err) }
   },
 
+  getFolders: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const folders = await zephyrService.getProjectFolders(
+        req.params.projectId,
+        req.user!.workspaceId
+      )
+      return res.json({ folders })
+    } catch (err) { next(err) }
+  },
+
   exportTestCases: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { testCaseIds } = req.body
+      const { testCaseIds, parentFolderId } = req.body
       if (!testCaseIds) {
         return res.status(400).json({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'testCaseIds is required. Pass "all" or an array of IDs.',
+            message: 'testCaseIds is required',
           },
         })
       }
@@ -101,7 +111,8 @@ export const zephyrController = {
       const result = await zephyrService.exportTestCases(
         req.params.featureId,
         testCaseIds,
-        req.user!.workspaceId
+        req.user!.workspaceId,
+        parentFolderId ? Number(parentFolderId) : null
       )
       return res.json(result)
     } catch (err: any) {

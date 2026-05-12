@@ -37,8 +37,25 @@ export default function ZephyrExportModal({
     new Map()
   )
   const [exportComplete, setExportComplete] = useState(false)
+  const [folders, setFolders] = useState<
+    Array<{ id: number; name: string; parentId: number | null }>
+  >([])
+  const [loadingFolders, setLoadingFolders] = useState(false)
+  const [selectedParentFolderId, setSelectedParentFolderId] = useState<
+    number | null
+  >(null)
 
   const { success: showSuccess, error: showError } = useToastStore()
+
+  useEffect(() => {
+    if (!open || !featureId) return
+    setLoadingFolders(true)
+    zephyrAPI
+      .getProjectFolders(featureId.split('/').at(-2) || '')
+      .then(f => setFolders(f))
+      .catch(() => setFolders([]))
+      .finally(() => setLoadingFolders(false))
+  }, [open, featureId])
 
   // Find the name field mapping key
   const nameField = useMemo(() => {
@@ -112,7 +129,11 @@ export default function ZephyrExportModal({
         : Array.from(selectedIds)
 
     try {
-      const result = await zephyrAPI.exportTestCases(featureId, casesToExport)
+      const result = await zephyrAPI.exportTestCases(
+        featureId,
+        casesToExport,
+        selectedParentFolderId
+      )
 
       const resultMap = new Map<string, ExportResult>()
       result.results.forEach(r => {
@@ -145,6 +166,26 @@ export default function ZephyrExportModal({
   }
 
   if (!open) return null
+
+  function buildFolderOptions(
+    folderList: Array<{ id: number; name: string; parentId: number | null }>
+  ): Array<{ id: number; label: string }> {
+    const roots = folderList.filter(f => !f.parentId)
+    const children = folderList.filter(f => !!f.parentId)
+
+    const result: Array<{ id: number; label: string }> = []
+
+    roots.forEach(root => {
+      result.push({ id: root.id, label: root.name })
+      children
+        .filter(c => c.parentId === root.id)
+        .forEach(child => {
+          result.push({ id: child.id, label: `  ↳ ${child.name}` })
+        })
+    })
+
+    return result
+  }
 
   const successCount = Array.from(exportResults.values()).filter(
     r => r.status === 'exported'
@@ -254,6 +295,66 @@ export default function ZephyrExportModal({
                   ? `✓ ${successCount} test case${successCount !== 1 ? 's' : ''} exported to Zephyr Scale`
                   : `${successCount} exported, ${failCount} failed`}
               </p>
+            </div>
+          )}
+
+          {/* Parent folder selector */}
+          {!exportComplete && (
+            <div className="mb-4">
+              <label className="text-[12px] font-medium text-[#333] block mb-1.5">
+                Group under folder
+                <span className="text-[#C0C0BC] font-normal ml-1.5">optional</span>
+              </label>
+
+              {loadingFolders ? (
+                <div className="text-[12px] text-[#aaa] py-2">
+                  Loading folders...
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedParentFolderId ?? ''}
+                    onChange={e =>
+                      setSelectedParentFolderId(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
+                    className="w-full border border-[#D8D8D4] rounded-lg px-3 py-2 text-[13px] text-[#111] font-sans outline-none bg-white appearance-none cursor-pointer pr-8 focus:border-[#4F46E5]"
+                  >
+                    <option value="">— No parent folder (create at root) —</option>
+                    {buildFolderOptions(folders).map(opt => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa] pointer-events-none text-[12px]">
+                    ▾
+                  </span>
+                </div>
+              )}
+
+              {/* Preview of resulting structure */}
+              <div className="mt-2 text-[11.5px] text-[#aaa] leading-relaxed">
+                {selectedParentFolderId ? (
+                  <>
+                    Will create:{' '}
+                    <span className="font-mono text-[#4F46E5]">
+                      /{folders.find(f => f.id === selectedParentFolderId)?.name}
+                      {' / '}
+                      {featureName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Will create:{' '}
+                    <span className="font-mono text-[#4F46E5]">
+                      /{featureName}
+                    </span>
+                    {' '}at project root
+                  </>
+                )}
+              </div>
             </div>
           )}
 

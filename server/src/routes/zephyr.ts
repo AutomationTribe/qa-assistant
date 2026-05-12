@@ -83,6 +83,27 @@ router.delete('/projects/:projectId/zephyr', zephyrController.deleteConnection)
 
 /**
  * @swagger
+ * /api/v1/projects/{projectId}/zephyr/folders:
+ *   get:
+ *     tags: [Zephyr]
+ *     summary: Get existing Zephyr folders for a project
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: projectId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Array of folders with id, name, parentId
+ */
+router.get(
+  '/projects/:projectId/zephyr/folders',
+  zephyrController.getFolders
+)
+
+/**
+ * @swagger
  * /api/v1/features/{featureId}/testcases/export-zephyr:
  *   post:
  *     tags: [Zephyr]

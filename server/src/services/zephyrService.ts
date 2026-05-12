@@ -108,12 +108,117 @@ export const zephyrService = {
     await prisma.zephyrConnection.delete({ where: { projectId } })
   },
 
+  async getProjectFolders(
+    projectId: string,
+    workspaceId: string
+  ): Promise<Array<{ id: number; name: string; parentId: number | null }>> {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: { zephyrConnection: true },
+    })
+    if (!project || project.workspaceId !== workspaceId) {
+      throw new NotFoundError('Project not found')
+    }
+    const conn = project.zephyrConnection
+    if (!conn) return []
+
+    const apiToken = decrypt(conn.apiToken)
+
+    try {
+      const response = await axios.get(
+        `${ZEPHYR_BASE}/folders?projectKey=${conn.jiraProjectKey}&folderType=TEST_CASE&maxResults=200`,
+        {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+          validateStatus: s => s < 500,
+        }
+      )
+
+      if (response.status !== 200) return []
+
+      const values = response.data?.values || []
+      return values.map((f: any) => ({
+        id: f.id as number,
+        name: f.name as string,
+        parentId: f.parentId ?? null,
+      }))
+    } catch {
+      return []
+    }
+  },
+
+  async createOrGetFolder(
+    apiToken: string,
+    jiraProjectKey: string,
+    folderName: string,
+    parentId?: number | null
+  ): Promise<number | null> {
+    try {
+      const body: Record<string, any> = {
+        projectKey: jiraProjectKey,
+        name: folderName,
+        folderType: 'TEST_CASE',
+      }
+
+      if (parentId) {
+        body.parentId = parentId
+      }
+
+      const response = await axios.post(
+        `${ZEPHYR_BASE}/folders`,
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+          validateStatus: s => s < 500,
+        }
+      )
+
+      if (response.status === 201 || response.status === 200) {
+        return response.data.id as number
+      }
+
+      if (response.status === 400) {
+        const search = await axios.get(
+          `${ZEPHYR_BASE}/folders?projectKey=${jiraProjectKey}&folderType=TEST_CASE&maxResults=200`,
+          {
+            headers: { Authorization: `Bearer ${apiToken}` },
+            timeout: 10000,
+          }
+        )
+        const values = search.data?.values || []
+
+        const existing = parentId
+          ? values.find(
+              (f: any) => f.name === folderName && f.parentId === parentId
+            )
+          : values.find(
+              (f: any) => f.name === folderName && !f.parentId
+            )
+
+        return existing?.id ?? null
+      }
+
+      return null
+    } catch (err: any) {
+      console.error('Folder creation error:', err?.response?.data || err.message)
+      return null
+    }
+  },
+
   // ── Export ────────────────────────────────────────────────
 
   async exportTestCases(
     featureId: string,
     testCaseIds: string[] | 'all',
-    workspaceId: string
+    workspaceId: string,
+    parentFolderId?: number | null
   ) {
     const feature = await prisma.feature.findUnique({
       where: { id: featureId },
@@ -173,6 +278,19 @@ export const zephyrService = {
       }
     }
 
+    // Create or get the feature folder (sanitized name)
+    const sanitisedFolderName = feature.name
+      .replace(/[<>:"|?*]/g, '')
+      .slice(0, 255)
+      .trim()
+
+    const folderId = await this.createOrGetFolder(
+      apiToken,
+      jiraProjectKey,
+      sanitisedFolderName,
+      parentFolderId ?? null
+    )
+
     // Export each one sequentially to avoid rate limits
     const results: Array<{
       testCaseId: string
@@ -206,21 +324,27 @@ export const zephyrService = {
       }
 
       try {
+        const tcBody: Record<string, any> = {
+          projectKey: jiraProjectKey,
+          name,
+          objective,
+          precondition,
+          testScript: {
+            type: 'STEP_BY_STEP',
+            steps: zephyrSteps,
+          },
+          statusName: 'Draft',
+          priorityName: mapPriority(priorityRaw),
+          labels: ['regi-generated'],
+        }
+
+        if (folderId) {
+          tcBody.folderId = folderId
+        }
+
         const response = await axios.post(
           `${ZEPHYR_BASE}/testcases`,
-          {
-            projectKey: jiraProjectKey,
-            name,
-            objective,
-            precondition,
-            testScript: {
-              type: 'STEP_BY_STEP',
-              steps: zephyrSteps,
-            },
-            statusName: 'Draft',
-            priorityName: mapPriority(priorityRaw),
-            labels: ['regi-generated'],
-          },
+          tcBody,
           {
             headers: {
               Authorization: `Bearer ${apiToken}`,

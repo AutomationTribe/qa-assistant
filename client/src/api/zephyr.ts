@@ -32,13 +32,23 @@ export const zephyrAPI = {
     await apiClient.delete(`/projects/${projectId}/zephyr`)
   },
 
+  async getProjectFolders(
+    projectId: string
+  ): Promise<Array<{ id: number; name: string; parentId: number | null }>> {
+    const res = await apiClient.get<{
+      folders: Array<{ id: number; name: string; parentId: number | null }>
+    }>(`/projects/${projectId}/zephyr/folders`)
+    return res.data.folders
+  },
+
   async exportTestCases(
     featureId: string,
-    testCaseIds: string[] | 'all'
+    testCaseIds: string[] | 'all',
+    parentFolderId?: number | null
   ): Promise<ZephyrExportResult> {
     const res = await apiClient.post<ZephyrExportResult>(
       `/features/${featureId}/testcases/export-zephyr`,
-      { testCaseIds }
+      { testCaseIds, parentFolderId: parentFolderId ?? null }
     )
     return res.data
   },
