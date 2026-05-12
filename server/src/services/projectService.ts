@@ -50,7 +50,7 @@ export const projectService = {
         logins: true,
         createdAt: true,
         _count: {
-          select: { tickets: true },
+          select: { tickets: true, testCases: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -96,7 +96,7 @@ export const projectService = {
         logins: true,
         createdAt: true,
         _count: {
-          select: { tickets: true },
+          select: { tickets: true, testCases: true },
         },
       },
     })
@@ -136,7 +136,7 @@ export const projectService = {
         logins: true,
         updatedAt: true,
         _count: {
-          select: { tickets: true },
+          select: { tickets: true, testCases: true },
         },
       },
     })
