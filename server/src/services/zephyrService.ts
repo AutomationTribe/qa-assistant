@@ -507,15 +507,39 @@ export const zephyrService = {
     if (steps.length === 0) return
 
     try {
-      const payload = {
-        mode: 'OVERWRITE',
-        items: steps.map(step => ({
+      // Parse pipe-separated format: "Action | Test data | Expected result"
+      const items = steps.map(step => {
+        const raw = step.description || ''
+
+        if (raw.includes('|')) {
+          const parts = raw.split('|').map(s => s.trim())
+          return {
+            inline: {
+              description: parts[0] || '',
+              testData: parts[1] || '',
+              expectedResult: parts[2] || step.expectedResult || '',
+            },
+          }
+        }
+
+        // No pipe — use as plain description with expectedResult from export
+        return {
           inline: {
-            description: step.description,
+            description: raw,
             testData: '',
             expectedResult: step.expectedResult || '',
           },
-        })),
+        }
+      })
+
+      console.log(`[Zephyr] Sending ${items.length} steps to ${testCaseKey}:`)
+      items.forEach((item, i) => {
+        console.log(`  Step ${i + 1}:`, JSON.stringify(item.inline))
+      })
+
+      const payload = {
+        mode: 'OVERWRITE',
+        items,
       }
 
       const response = await axios.post(
@@ -532,7 +556,7 @@ export const zephyrService = {
       )
 
       if (response.status === 200 || response.status === 201) {
-        console.log(`[Zephyr] Added ${steps.length} steps to ${testCaseKey}`)
+        console.log(`[Zephyr] ✓ Added ${items.length} steps to ${testCaseKey}`)
       } else {
         console.log(
           `[Zephyr] Steps failed (${response.status}):`,

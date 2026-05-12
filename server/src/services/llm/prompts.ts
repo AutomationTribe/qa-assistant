@@ -34,7 +34,21 @@ ${fieldSchema}
 
 Test case style: ${style}
 Generate a mix of positive, negative, and edge case scenarios.
-For STEPS fields: return an array of strings, one step per item.
+
+For STEPS fields: return an array of strings, one string per step.
+Each step MUST use pipe-separated format: "Action | Test data | Expected result"
+- Action: what the tester does, starting with a verb
+- Test data: specific values used (email, password, URL, etc.) Leave empty if none: "Action | | Expected"
+- Expected result: what should happen. Last step must always have a result.
+
+Example steps:
+[
+  "Navigate to the login page | URL: /auth/login | Login page loads with email and password fields visible",
+  "Enter email address | Email: testuser@example.com | Email field is populated with the entered value",
+  "Enter password | Password: Test@1234 | Password is masked in the field",
+  "Click Sign In button | | User is redirected to dashboard and welcome message is displayed"
+]
+
 For SELECT fields: return exactly one of the allowed values.
 For BOOLEAN fields: return true or false.
 For NUMBER fields: return a number.
