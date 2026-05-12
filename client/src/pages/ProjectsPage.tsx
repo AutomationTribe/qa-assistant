@@ -4,6 +4,9 @@ import { useProjectStore } from '@/store/projectStore'
 import Layout from '@/components/Layout'
 import CreateProjectModal from '@/components/CreateProjectModal'
 import Button from '@/components/ui/Button'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
+import type { Project } from '@/types/api'
 
 const STYLE_EMOJI: Record<string, string> = {
   bdd: '📋',
@@ -26,7 +29,12 @@ const STYLE_COLORS: Record<string, { bg: string; text: string }> = {
 export default function ProjectsPage() {
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { projects, loading, error, fetchProjects, selectProject } = useProjectStore()
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const { projects, loading, error, fetchProjects, selectProject, deleteProject } = useProjectStore()
+  const { success: showSuccess, error: showError } = useToastStore()
 
   useEffect(() => {
     fetchProjects()
@@ -38,6 +46,32 @@ export default function ProjectsPage() {
       selectProject(project)
       navigate(`/projects/${projectId}/features`)
     }
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation()
+    setProjectToDelete(project)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return
+    setIsDeleting(true)
+    try {
+      await deleteProject(projectToDelete.id)
+      setDeleteConfirmOpen(false)
+      setProjectToDelete(null)
+      showSuccess(`Project "${projectToDelete.name}" deleted`)
+    } catch {
+      showError('Failed to delete project')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setProjectToDelete(null)
   }
 
   const topbarAction = <Button onClick={() => setIsModalOpen(true)}>+ New Project</Button>
@@ -75,7 +109,7 @@ export default function ProjectsPage() {
               <div
                 key={project.id}
                 onClick={() => handleProjectClick(project.id)}
-                className="bg-white rounded-xl border border-[#EBEBEB] p-5 hover:shadow-md hover:border-[#4F46E5]/30 transition cursor-pointer"
+                className="bg-white rounded-xl border border-[#EBEBEB] p-5 hover:shadow-md hover:border-[#4F46E5]/30 transition cursor-pointer group relative"
               >
                 <div className="flex items-start gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-[#EEEDF8] flex items-center justify-center text-lg flex-shrink-0">
@@ -88,6 +122,13 @@ export default function ProjectsPage() {
                       test cases
                     </p>
                   </div>
+                  <button
+                    onClick={(e) => handleDeleteClick(e, project)}
+                    className="flex-shrink-0 w-6 h-6 rounded opacity-0 group-hover:opacity-100 hover:bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center transition-opacity text-[14px]"
+                    title="Delete project"
+                  >
+                    ✕
+                  </button>
                 </div>
                 <div>
                   <span
@@ -113,6 +154,18 @@ export default function ProjectsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete project?"
+        message={`Are you sure you want to delete "${projectToDelete?.name}"? All associated features and test cases will also be deleted. This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        isDangerous
+      />
 
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Layout>

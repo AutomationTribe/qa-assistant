@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Project, TemplateConfig, ProjectLogin } from '@/types/api'
-import { getProjects, createProject as apiCreateProject } from '@/api/projects'
+import { getProjects, createProject as apiCreateProject, deleteProject as apiDeleteProject } from '@/api/projects'
 
 interface ProjectState {
   projects: Project[]
@@ -15,6 +15,7 @@ interface ProjectState {
     templateConfig: TemplateConfig
     logins?: ProjectLogin[]
   }) => Promise<Project>
+  deleteProject: (id: string) => Promise<void>
   selectProject: (project: Project) => void
 }
 
@@ -42,6 +43,17 @@ export const useProjectStore = create<ProjectState>((set) => ({
       return project
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create project'
+      set({ error: message })
+      throw error
+    }
+  },
+
+  deleteProject: async (id) => {
+    try {
+      await apiDeleteProject(id)
+      set((state) => ({ projects: state.projects.filter((p) => p.id !== id) }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete project'
       set({ error: message })
       throw error
     }

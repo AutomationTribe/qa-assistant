@@ -4,8 +4,8 @@ import Layout from '@/components/Layout'
 import Button from '@/components/ui/Button'
 import AddFieldModal from '@/components/AddFieldModal'
 import TemplatePreviewModal from '@/components/TemplatePreviewModal'
-import Toast from '@/components/ui/Toast'
 import { useTemplateStore } from '@/store/templateStore'
+import { toast } from '@/store/toastStore'
 import { TestCaseField } from '@/types/api'
 import { getProject } from '@/api/projects'
 
@@ -23,9 +23,6 @@ export default function TemplatePage() {
   const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null)
   const [unsavedChanges, setUnsavedChanges] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [toastVisible, setToastVisible] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
-  const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
   const { template, loading, fetchTemplate, updateTemplate } = useTemplateStore()
 
@@ -82,18 +79,19 @@ export default function TemplatePage() {
       await updateTemplate(projectId, workingFields)
       setUnsavedChanges(false)
       setSaveState('saved')
-      setToastMessage('Template saved successfully')
-      setToastType('success')
-      setToastVisible(true)
-      setTimeout(() => setSaveState('idle'), 2000)
+      toast.success('Template saved successfully')
+      setTimeout(() => navigate('/projects'), 800)
     } catch (error) {
       console.error('Failed to save template:', error)
       setSaveState('error')
-      setToastMessage('Failed to save template. Please try again.')
-      setToastType('error')
-      setToastVisible(true)
+      toast.error('Failed to save template. Please try again.')
       setTimeout(() => setSaveState('idle'), 2000)
     }
+  }
+
+  const handleAddFirstField = () => {
+    setEditingFieldIndex(null)
+    setShowAddFieldModal(true)
   }
 
   const editingField = editingFieldIndex !== null ? workingFields[editingFieldIndex] : undefined
@@ -165,11 +163,29 @@ export default function TemplatePage() {
         {loading ? (
           <div className="text-center py-12 text-gray-500">Loading template...</div>
         ) : workingFields.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-            <p className="text-gray-600 mb-4">No fields yet</p>
-            <Button variant="primary" onClick={() => setShowAddFieldModal(true)}>
-              Add your first field
-            </Button>
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center max-w-[380px]">
+              <div className="w-14 h-14 rounded-2xl bg-[#EEEDF8] flex items-center justify-center text-2xl mx-auto mb-4">
+                📋
+              </div>
+              <h3 className="text-[16px] font-semibold text-[#111] mb-2">
+                No template defined yet
+              </h3>
+              <p className="text-[13px] text-[#888] leading-relaxed mb-6">
+                A template defines the fields the AI will fill for every test case
+                in this project. Add your first field to get started.
+              </p>
+              <button
+                onClick={handleAddFirstField}
+                className="inline-flex items-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white border-none rounded-lg px-5 py-2.5 text-[13px] font-medium cursor-pointer font-sans transition-colors"
+              >
+                ＋ Add your first field
+              </button>
+              <p className="text-[11.5px] text-[#aaa] mt-4 leading-relaxed">
+                We recommend starting with: Test Title, Test Steps,
+                Expected Result, and Priority.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-3 mb-6">
@@ -227,21 +243,19 @@ export default function TemplatePage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
 
-        {/* Add Field Button */}
-        {workingFields.length > 0 && (
-          <div className="flex justify-center">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingFieldIndex(null)
-                setShowAddFieldModal(true)
-              }}
-            >
-              + Add Field
-            </Button>
+            {/* Add Field Button */}
+            <div className="flex justify-center mt-6">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setEditingFieldIndex(null)
+                  setShowAddFieldModal(true)
+                }}
+              >
+                + Add Field
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -260,13 +274,6 @@ export default function TemplatePage() {
       )}
 
       {showPreview && <TemplatePreviewModal fields={workingFields as TestCaseField[]} onClose={() => setShowPreview(false)} />}
-
-      <Toast
-        message={toastMessage}
-        type={toastType}
-        visible={toastVisible}
-        onHide={() => setToastVisible(false)}
-      />
     </Layout>
   )
 }

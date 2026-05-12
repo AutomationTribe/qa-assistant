@@ -12,12 +12,12 @@ interface FeatureStore {
     dateTo?: string
     status?: FeatureStatus
   }): Promise<void>
-  createFeature(projectId: string, data: { name: string; type: FeatureType }): Promise<void>
+  createFeature(projectId: string, data: { name: string; type: FeatureType; description?: string }): Promise<Feature>
   updateFeature(projectId: string, featureId: string, data: Partial<Feature>): Promise<void>
   deleteFeature(projectId: string, featureId: string): Promise<void>
 }
 
-export const useFeatureStore = create<FeatureStore>((set, get) => ({
+export const useFeatureStore = create<FeatureStore>((set) => ({
   features: [],
   loading: false,
   error: null,
@@ -36,6 +36,7 @@ export const useFeatureStore = create<FeatureStore>((set, get) => ({
     try {
       const feature = await featuresAPI.createFeature(projectId, data)
       set(state => ({ features: [feature, ...state.features] }))
+      return feature
     } catch (error) {
       set({ error: 'Failed to create feature' })
       throw error

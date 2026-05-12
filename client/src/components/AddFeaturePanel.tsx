@@ -1,18 +1,22 @@
 import { useState } from 'react'
+import axios from 'axios'
 import { useFeatureStore } from '@/store/featureStore'
 import { useProjectStore } from '@/store/projectStore'
-import { FeatureType } from '@/types/api'
+import { Feature, FeatureType } from '@/types/api'
 import SlidePanel from '@/components/ui/SlidePanel'
 
 interface AddFeaturePanelProps {
   projectId: string
   open: boolean
   onClose: () => void
+  onCreated: (feature: Feature, generateAI: boolean) => void
 }
 
-export default function AddFeaturePanel({ projectId, open, onClose }: AddFeaturePanelProps) {
+export default function AddFeaturePanel({ projectId, open, onClose, onCreated }: AddFeaturePanelProps) {
   const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [type, setType] = useState<FeatureType>('NEW_FEATURE')
+  const [generateAI, setGenerateAI] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -31,13 +35,28 @@ export default function AddFeaturePanel({ projectId, open, onClose }: AddFeature
     }
 
     setIsLoading(true)
+    let feature: Feature
     try {
-      await createFeature(projectId, { name, type })
+      feature = await createFeature(projectId, { name, type, description: description || undefined })
+    } catch (err) {
+      let message = 'Failed to create feature'
+      if (axios.isAxiosError(err)) {
+        message = err.response?.data?.error?.message || err.message || message
+      } else if (err instanceof Error) {
+        message = err.message
+      }
+      setError(message)
+      setIsLoading(false)
+      console.error('Feature creation error:', err)
+      return
+    }
+
+    try {
       setName('')
+      setDescription('')
       setType('NEW_FEATURE')
-      onClose()
-    } catch {
-      setError('Failed to create feature')
+      setGenerateAI(false)
+      onCreated(feature, generateAI)
     } finally {
       setIsLoading(false)
     }
@@ -69,7 +88,7 @@ export default function AddFeaturePanel({ projectId, open, onClose }: AddFeature
                 Creating...
               </>
             ) : (
-              'Add Feature →'
+              'Add Feature'
             )}
           </button>
         </>
@@ -92,6 +111,18 @@ export default function AddFeaturePanel({ projectId, open, onClose }: AddFeature
         </div>
 
         <div>
+          <label className="block text-[13px] font-medium text-[#333] mb-2">Description (optional)</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Additional details about this feature"
+            rows={2}
+            className="w-full border border-[#DDDDD9] rounded-lg px-3 py-2 text-[13px] text-[#111] placeholder-[#C0C0BC] bg-[#FAFAF8] focus:border-[#4F46E5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#4F46E5]/10 resize-none"
+          />
+          <span className="text-[11px] text-[#C0C0BC] mt-1 block">{description.length} / 2000</span>
+        </div>
+
+        <div>
           <label className="block text-[13px] font-medium text-[#333] mb-2">Feature type</label>
           <select
             value={type}
@@ -101,6 +132,40 @@ export default function AddFeaturePanel({ projectId, open, onClose }: AddFeature
             <option value="NEW_FEATURE">🔵 New Feature</option>
             <option value="BUG">🔴 Bug</option>
           </select>
+        </div>
+
+        <div
+          onClick={() => setGenerateAI(prev => !prev)}
+          className={[
+            'border-[1.5px] rounded-xl p-3.5 cursor-pointer transition-all select-none',
+            generateAI
+              ? 'border-[#4F46E5] bg-[#F5F4FD]'
+              : 'border-[#D8D8D4] bg-white',
+          ].join(' ')}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className={`flex items-center gap-2 text-[13px] font-medium ${
+              generateAI ? 'text-[#333]' : 'text-[#333]'
+            }`}>
+              <span className={generateAI ? 'opacity-100' : 'opacity-35'}>✦</span>
+              Generate test cases with AI
+            </div>
+            <div className={`w-[35px] h-[20px] rounded-full relative flex-shrink-0 transition-colors ${
+              generateAI ? 'bg-[#4F46E5]' : 'bg-[#D0D0CC]'
+            }`}>
+              <div className={`w-[14px] h-[14px] bg-white rounded-full absolute top-[3px] transition-all shadow-sm ${
+                generateAI ? 'left-[18px]' : 'left-[3px]'
+              }`}/>
+            </div>
+          </div>
+          <p className={`text-[12px] mt-1.5 leading-[1.5] ${
+            generateAI ? 'text-[#6B64D0]' : 'text-[#888]'
+          }`}>
+            {generateAI
+              ? 'AI will generate test cases using your template after adding this feature.'
+              : 'Enable to automatically generate test cases using your template after adding this feature.'
+            }
+          </p>
         </div>
 
         <div>

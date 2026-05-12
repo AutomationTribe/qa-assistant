@@ -71,7 +71,7 @@ export const featureService = {
   async createFeature(
     projectId: string,
     workspaceId: string,
-    data: { name: string; type: 'NEW_FEATURE' | 'BUG' }
+    data: { name: string; type: 'NEW_FEATURE' | 'BUG'; description?: string }
   ) {
     const project = await prisma.project.findUnique({ where: { id: projectId } })
     if (!project) throw new NotFoundError('Project not found')
@@ -80,6 +80,7 @@ export const featureService = {
     const feature = await prisma.feature.create({
       data: {
         name: data.name,
+        description: data.description || null,
         type: data.type,
         status: 'FINAL',
         projectId,

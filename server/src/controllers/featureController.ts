@@ -9,6 +9,7 @@ interface AuthRequest extends Request {
 const createSchema = z.object({
   name: z.string().min(3).max(200),
   type: z.enum(['NEW_FEATURE', 'BUG']),
+  description: z.string().max(2000).optional(),
 })
 
 const updateSchema = z.object({

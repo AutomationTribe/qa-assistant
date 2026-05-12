@@ -492,11 +492,13 @@ Request body:
 ```json
 {
   "name": "User can log in with email and password",
-  "type": "NEW_FEATURE"
+  "type": "NEW_FEATURE",
+  "description": "User should be able to authenticate with email and password"
 }
 ```
 type must be: "NEW_FEATURE" | "BUG"
 name must be 3-200 characters
+description is optional, max 2000 characters
 
 Response 201:
 ```json
@@ -504,6 +506,7 @@ Response 201:
   "feature": {
     "id": "uuid",
     "name": "User can log in with email and password",
+    "description": "User should be able to authenticate with email and password",
     "type": "NEW_FEATURE",
     "status": "FINAL",
     "projectId": "uuid",
@@ -802,6 +805,300 @@ Name, Status, Priority, Component, Description, Precondition, Test Script (Step-
 Errors:
 - 400 VALIDATION_ERROR — no test case IDs provided
 - 400 VALIDATION_ERROR — more than 500 IDs provided
+
+---
+
+## Test Cases — /api/v1/features/:featureId/testcases
+All routes require: Authorization: Bearer {accessToken}
+
+### GET /api/v1/features/:featureId/testcases
+List all test cases for a feature with template fields.
+
+Response 200:
+```json
+{
+  "testCases": [
+    {
+      "id": "uuid",
+      "featureId": "uuid",
+      "fieldValues": {
+        "test_title": "Successful login with valid credentials",
+        "test_priority": "HIGH",
+        "test_type": "POSITIVE",
+        "test_steps": ["Navigate to /login", "Enter valid email", "Click Sign In"],
+        "expected_result": "User is redirected to dashboard. Session persists on refresh."
+      },
+      "generatedBy": "LLM",
+      "createdAt": "2026-05-01T12:00:00.000Z",
+      "updatedAt": "2026-05-01T12:00:00.000Z"
+    }
+  ],
+  "fields": [
+    {
+      "id": "uuid",
+      "key": "test_title",
+      "name": "Test Title",
+      "type": "TEXT",
+      "required": true,
+      "order": 0,
+      "description": "Short descriptive title for the test"
+    }
+  ]
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+
+---
+
+
+---
+
+### POST /api/v1/features/:featureId/testcases/generate
+Generate test cases for a feature using AI. Uses project's template fields as schema.
+
+No request body needed.
+
+Response 200:
+```json
+{
+  "testCases": [
+    {
+      "id": "uuid",
+      "featureId": "uuid",
+      "fieldValues": {
+        "test_title": "Successful login with valid credentials",
+        "test_priority": "HIGH",
+        "test_type": "POSITIVE",
+        "test_steps": ["Navigate to /login", "Enter credentials", "Click Sign In"],
+        "expected_result": "User is redirected to dashboard"
+      },
+      "generatedBy": "LLM",
+      "createdAt": "2026-05-01T12:00:00.000Z",
+      "updatedAt": "2026-05-01T12:00:00.000Z"
+    }
+  ],
+  "fields": [
+    {
+      "id": "uuid",
+      "key": "test_title",
+      "name": "Test Title",
+      "type": "TEXT",
+      "required": true,
+      "order": 0
+    }
+  ],
+  "count": 5
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+- 400 NO_TEMPLATE — project has no test case template configured
+- 400 LLM_ERROR — LLM generation failed
+
+---
+
+### PATCH /api/v1/testcases/:testCaseId
+Update a test case's field values. Field keys must match template.
+
+Request body:
+```json
+{
+  "fieldValues": {
+    "test_title": "Updated test case title",
+    "test_priority": "MEDIUM",
+    "test_type": "NEGATIVE",
+    "test_steps": ["Step 1", "Step 2", "Step 3"],
+    "expected_result": "Updated expected result"
+  }
+}
+```
+
+Response 200:
+```json
+{
+  "testCase": {
+    "id": "uuid",
+    "featureId": "uuid",
+    "fieldValues": {
+      "test_title": "Updated test case title",
+      "test_priority": "MEDIUM",
+      "test_type": "NEGATIVE",
+      "test_steps": ["Step 1", "Step 2", "Step 3"],
+      "expected_result": "Updated expected result"
+    },
+    "generatedBy": "LLM",
+    "createdAt": "2026-05-01T12:00:00.000Z",
+    "updatedAt": "2026-05-01T14:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — test case does not exist or does not belong to workspace
+- 401 UNAUTHORIZED — access denied
+
+---
+
+### DELETE /api/v1/testcases/:testCaseId
+Soft delete a test case (sets deletedAt timestamp, data is not removed).
+
+No request body.
+
+Response 200:
+```json
+{
+  "message": "Test case deleted"
+}
+```
+
+Errors:
+- 404 NOT_FOUND — test case does not exist or does not belong to workspace
+- 400 FORBIDDEN — access denied
+
+---
+
+## Zephyr Scale — /api/v1/projects/:projectId/zephyr
+All routes require: Authorization: Bearer {accessToken}
+
+### GET /api/v1/projects/:projectId/zephyr
+Get the Zephyr Scale connection status for a project.
+
+Response 200 (connected):
+```json
+{
+  "connection": {
+    "id": "uuid",
+    "jiraProjectKey": "MAP",
+    "fieldMapping": {
+      "name": "test_title",
+      "steps": "test_steps",
+      "objective": "expected_result",
+      "priority": "priority",
+      "precondition": "preconditions"
+    },
+    "connected": true
+  }
+}
+```
+
+Response 200 (not connected):
+```json
+{
+  "connection": null
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+
+---
+
+### POST /api/v1/projects/:projectId/zephyr
+Save or update a Zephyr Scale connection for a project.
+
+Request body:
+```json
+{
+  "apiToken": "your-atlassian-api-token",
+  "jiraProjectKey": "MAP",
+  "fieldMapping": {
+    "name": "test_title",
+    "steps": "test_steps",
+    "objective": "expected_result",
+    "priority": "priority",
+    "precondition": "preconditions"
+  }
+}
+```
+
+Response 200:
+```json
+{
+  "connection": {
+    "id": "uuid",
+    "jiraProjectKey": "MAP",
+    "fieldMapping": {
+      "name": "test_title",
+      "steps": "test_steps",
+      "objective": "expected_result",
+      "priority": "priority",
+      "precondition": "preconditions"
+    },
+    "connected": true
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+- 400 VALIDATION_ERROR — missing required fields
+- 400 INVALID_TOKEN — API token is invalid or revoked
+
+---
+
+### DELETE /api/v1/projects/:projectId/zephyr
+Remove the Zephyr Scale connection from a project.
+
+No request body.
+
+Response 200:
+```json
+{
+  "message": "Zephyr connection removed"
+}
+```
+
+Errors:
+- 404 NOT_FOUND — project does not exist or does not belong to workspace
+
+---
+
+### POST /api/v1/features/:featureId/testcases/export-zephyr
+Export test cases to Zephyr Scale Cloud. Enqueues them sequentially to avoid rate limits.
+
+Request body (testCaseIds is required):
+```json
+{
+  "testCaseIds": "all"
+}
+```
+or
+```json
+{
+  "testCaseIds": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+
+Response 200:
+```json
+{
+  "results": [
+    {
+      "testCaseId": "uuid-1",
+      "zephyrKey": "MAP-T1",
+      "success": true
+    },
+    {
+      "testCaseId": "uuid-2",
+      "zephyrKey": "",
+      "success": false,
+      "error": "Network timeout"
+    }
+  ],
+  "successCount": 1,
+  "failCount": 1,
+  "total": 2,
+  "message": "Export completed with 1 failure"
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+- 400 VALIDATION_ERROR — testCaseIds is missing or invalid
+- 400 NO_ZEPHYR_CONNECTION — project has no Zephyr connection configured
 
 ---
 

@@ -6,9 +6,9 @@
 - Phase 3 — Projects CRUD + UI               ✅ done
 - Phase 4 — Test Case Template Builder       ✅ done
 - Phase 5 — Features                         ✅ done
-- Phase 6 — LLM Generation                   🔲 pending
-- Phase 7 — Review and Editing               🔲 pending
-- Phase 8 — Export                           🔲 pending
+- Phase 6 — Test Cases + Generate Flow       ✅ done
+- Phase 7 — AI Generation + Dynamic Columns + Sidebar  ✅ done
+- Phase 8 — Zephyr Scale Export              ✅ done
 
 ---
 
@@ -128,7 +128,7 @@
    - POST   /api/v1/projects/:projectId/template/fields
    - DELETE /api/v1/projects/:projectId/template/fields/:fieldId
    - PUT    /api/v1/projects/:projectId/template/fields/reorder
-   - Auto-create default 6-field template on project creation
+   - Projects start with empty template (no default fields)
 
 ✅ Template Builder UI (client)
    - Files: client/src/pages/TemplatePage.tsx,
@@ -177,88 +177,148 @@
 
 ---
 
-## Phase 6 — LLM Generation 🔲
+## Phase 6 — Test Cases + Generate Flow ✅
 
-🔲 Queue setup
-   - Files: server/src/lib/queue.ts
-   - BullMQ Queue named "llm", connected to Redis singleton
-   - Export LLMJobData type: { ticketId, projectId, userId, socketId? }
+✅ Test Case model + migration (server)
+   - Add deletedAt field to TestCase model for soft deletes
+   - Migration: add_testcase_soft_delete
 
-🔲 LLM prompt builder
+✅ Test Case CRUD endpoints (server)
+   - Files: server/src/services/testCaseService.ts,
+     server/src/controllers/testCaseController.ts,
+     server/src/routes/testcases.ts
+   - GET    /api/v1/features/:featureId/testcases — list test cases
+   - POST   /api/v1/features/:featureId/testcases — create test case
+   - POST   /api/v1/features/:featureId/testcases/generate — generate with AI
+   - PATCH  /api/v1/testcases/:testCaseId — update test case
+   - DELETE /api/v1/testcases/:testCaseId — soft delete test case
+   - All routes protected with auth middleware
+
+✅ Test Case API client (client)
+   - Files: client/src/api/testcases.ts, client/src/types/api.ts
+   - Exported types: Priority, TestCaseType, GeneratedBy, TestCase
+   - API methods: listTestCases, createTestCase, generateTestCases, updateTestCase, deleteTestCase
+
+✅ Test Case Zustand store (client)
+   - Files: client/src/store/testCaseStore.ts
+   - State: testCases[], loading, generating, error
+   - Methods: fetchTestCases, generateTestCases, updateTestCase, deleteTestCase, clearTestCases
+
+✅ Features page enhancements (client)
+   - Files: client/src/pages/FeaturesPage.tsx, client/src/components/AddFeaturePanel.tsx
+   - Add Feature panel: Generate AI toggle + new onCreated callback
+   - Generate button in Actions column (shows when testCases count = 0)
+   - Row click navigates to test cases page
+   - Toast notification after feature creation (when generate = off)
+
+✅ Test Cases page (client)
+   - Files: client/src/pages/TestCasesPage.tsx
+   - Feature info bar: name, type badge, AI Generated pill (if generated), test count
+   - Test cases table with columns: title, priority, type, steps, expected result, actions
+   - Inline edit: click pencil, row shows input fields with Save/Cancel
+   - Inline delete: click trash, row shows confirmation with Yes/Cancel
+   - Empty state: "No test cases yet" with Generate + Add buttons
+   - Generating state: skeleton rows + "✦ Generating..." label
+   - Topbar: Regenerate, Export CSV, Add test case buttons
+   - Breadcrumb navigation
+   - Badge colors: Priority (HIGH/MEDIUM/LOW) and Type (POSITIVE/NEGATIVE/EDGE_CASE)
+
+✅ App routing (client)
+   - Files: client/src/App.tsx
+   - New route: /projects/:projectId/features/:featureId/testcases → TestCasesPage
+
+✅ API documentation
+   - Files: context/api-endpoints.md
+   - Added all 5 test case endpoints with request/response examples
+
+---
+
+## Phase 7 — AI Generation + Dynamic Columns + Sidebar ✅
+
+✅ Prisma schema updates (server)
+   - Updated TestCase model: remove old fields (title, priority, steps, etc.), keep only featureId + fieldValues (Json)
+   - Added description field to Feature model
+   - Migration: testcase_dynamic_fields, add_feature_description
+   - TestCaseField model already existed from Phase 4
+
+✅ LLM prompt builder (server)
    - Files: server/src/services/llm/prompts.ts
-   - buildSystemPrompt() → system instruction string
-   - buildUserPrompt(ticket, template, fields) → user prompt string
-   - Prompt instructs AI to fill each template field dynamically
-   - Supports BDD, step_by_step, exploratory styles
+   - Function: buildTestCaseGenerationPrompt(feature, fields, style)
+   - Generates system + user prompts for OpenAI based on template fields
+   - Validates field types, required fields, SELECT options
 
-🔲 LLM orchestrator
-   - Files: server/src/services/llm/orchestrator.ts
-   - buildPrompt(ticket, project) → { systemPrompt, userPrompt }
-   - callLLM(prompts) → stream tokens via Socket.IO
-   - validateOutput(raw, fields) → fieldValues[] or throw
-   - Retry up to 3 times on validation failure
+✅ Test case generation endpoint (server)
+   - Files: server/src/services/testCaseService.ts,
+     server/src/controllers/testCaseController.ts,
+     server/src/routes/testcases.ts
+   - POST /api/v1/features/:featureId/testcases/generate
+   - Returns: { testCases[], fields[], count }
+   - GET /api/v1/features/:featureId/testcases — returns { testCases[], fields[] }
+   - PATCH /api/v1/testcases/:testCaseId — accepts fieldValues only
+   - DELETE /api/v1/testcases/:testCaseId
 
-🔲 BullMQ LLM worker
-   - Files: server/src/workers/llmWorker.ts
-   - Job name: "llm:generate"
-   - Input: { ticketId, projectId, userId, socketId? }
-   - Calls orchestrator → saves TestCases to DB
-   - Updates ticket status: GENERATING → DONE or FAILED
-   - Emits generation:token, generation:complete, generation:failed via Socket.IO
-   - Retry 3x with exponential backoff, concurrency 2
+✅ Dynamic columns table (client)
+   - Files: client/src/pages/TestCasesPage.tsx
+   - Table columns built from template fields at runtime
+   - Each field type renders correctly: TEXT, TEXTAREA, STEPS, SELECT, MULTISELECT, BOOLEAN, NUMBER
+   - Read mode: truncate text, badges for SELECT/BOOLEAN, numbered list for STEPS
+   - Edit mode: appropriate form controls for each field type
+   - Actions: inline edit (single row) or edit all (after AI generation)
 
-🔲 Generation trigger endpoint
-   - Files: server/src/routes/testcases.ts,
-     server/src/controllers/testCaseController.ts
-   - POST /api/v1/tickets/:ticketId/generate
-   - Enqueue job, return 202 { jobId }
+✅ Sidebar collapse (client)
+   - Width: w-[208px] expanded, w-[48px] collapsed (icon only)
+   - Toggle button at bottom: ◀ (rotates 180° when collapsed)
+   - State persists in localStorage: sidebarCollapsed
+   - Smooth transition: transition-all duration-200
+   - Files: client/src/components/Layout.tsx
 
-🔲 Generation UI (client)
-   - Files: client/src/hooks/useSocket.ts,
-     client/src/store/testCaseStore.ts, client/src/api/testcases.ts
-   - useSocket hook: connects to WS, handles generation events
-   - Token-by-token streaming preview
-   - Generation:complete → render TestCaseList
-   - Generation:failed → error message + retry button
+✅ AI generation flow (client)
+   - Add Feature panel: description field (optional), Generate toggle
+   - When Generate = on and feature created: redirect to test cases page with ?generate=true
+   - Page detects query param, triggers generateTestCases()
+   - All rows enter edit mode (allEditMode = true)
+   - Draft values pre-populated from AI output
+   - Banner: "X test cases generated — review and edit"
+   - Save all button saves all at once
 
----
-
-## Phase 7 — Review and Editing 🔲
-
-🔲 TestCaseCard component (client)
-   - Files: client/src/components/TestCaseCard.tsx
-   - Dynamic field rendering based on template fields
-   - Click any field to enter inline edit mode
-   - Version history badge: "v{n}" if versions > 1
-   - Auto-save on blur → PATCH /api/v1/testcases/:id
-
-🔲 TestCaseEditor — rich text steps (client)
-   - Files: client/src/components/TestCaseEditor.tsx
-   - TipTap editor for STEPS field type
-   - Ordered list, bold, italic
-   - Auto-save on blur
-
-🔲 Version history (server + client)
-   - GET  /api/v1/testcases/:id/versions
-   - POST /api/v1/testcases/:id/restore/:versionId
-   - VersionHistoryPanel slide-in from right
-   - Restore a previous version
+✅ API types (client)
+   - Updated: TestCase (fieldValues only), TestCaseField (already defined)
+   - testcasesAPI returns { testCases[], fields[] }
+   - useTestCaseStore holds both testCases + fields
 
 ---
 
-## Phase 8 — Export 🔲
+## Phase 8 — Zephyr Scale Export ✅
 
-🔲 CSV export endpoint (server)
-   - Files: server/src/services/export/csvExporter.ts,
-     server/src/routes/export.ts
-   - POST /api/v1/export/csv — accepts { testCaseIds[] }
-   - Column headers = template field names (dynamic)
-   - Stream response, up to 500 rows
+✅ Zephyr Scale integration (server)
+   - Files: server/prisma/schema.prisma, server/src/lib/encryption.ts,
+     server/src/services/zephyrService.ts, server/src/controllers/zephyrController.ts,
+     server/src/routes/zephyr.ts
+   - Added ZephyrConnection model to store Atlassian API token (encrypted) + field mapping
+   - Added zephyrKey and zephyrId fields to TestCase model
+   - 4 endpoints: GET /projects/:projectId/zephyr, POST, DELETE,
+     POST /features/:featureId/testcases/export-zephyr
+   - API token encrypted using AES-256-GCM
+   - Field mapping stored as JSON to support dynamic template fields
+   - Sequential export (one at a time) to avoid rate limits
+   - Exports skips test cases already in Zephyr (zephyrKey is not null)
 
-🔲 Export UI (client)
-   - Files: client/src/pages/ExportPage.tsx,
-     client/src/components/ExportButton.tsx, client/src/api/export.ts
-   - Select test cases, click export, browser download triggers
+✅ Zephyr UI (client)
+   - Files: client/src/components/ZephyrSetupPanel.tsx,
+     client/src/components/ZephyrExportModal.tsx,
+     client/src/pages/TestCasesPage.tsx
+   - Setup panel: Atlassian API token, Jira project key, field mapping selects
+     with auto-defaults based on field names/types
+   - Export modal: two tabs (Export All / Export Selected)
+     with test case list, status icons (⏳/✓/✕), live updates during export
+   - TestCasesPage: Select button, Connect/Export Zephyr button,
+     Zephyr key badges on exported rows, checkbox column in select mode
+   - Zustand state management for connection + export progress
+   - Toast notifications for success/error
+
+✅ API documentation
+   - Files: context/api-endpoints.md
+   - Added 4 Zephyr endpoints with request/response examples
 
 ---
 

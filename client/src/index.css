@@ -55,3 +55,12 @@ body {
 .overlay-fade-out {
   animation: fadeOut 0.2s ease forwards;
 }
+
+/* Toast animations */
+@keyframes toastIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.toast-enter {
+  animation: toastIn 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}

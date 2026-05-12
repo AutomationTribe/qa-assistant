@@ -4,9 +4,14 @@ import Layout from '@/components/Layout'
 import AddFeaturePanel from '@/components/AddFeaturePanel'
 import EditFeatureModal from '@/components/EditFeatureModal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ZephyrSetupPanel from '@/components/ZephyrSetupPanel'
 import { useProjectStore } from '@/store/projectStore'
 import { useFeatureStore } from '@/store/featureStore'
-import { Feature } from '@/types/api'
+import { useTestCaseStore } from '@/store/testCaseStore'
+import { toast } from '@/store/toastStore'
+import { zephyrAPI } from '@/api/zephyr'
+import { templatesAPI } from '@/api/templates'
+import { Feature, ZephyrConnection, TestCaseField } from '@/types/api'
 
 type SortField = 'date' | 'testCases'
 
@@ -26,6 +31,9 @@ export default function FeaturesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [featureToDelete, setFeatureToDelete] = useState<Feature | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [zephyrConn, setZephyrConn] = useState<ZephyrConnection | null>(null)
+  const [zephyrSetupOpen, setZephyrSetupOpen] = useState(false)
+  const [templateFields, setTemplateFields] = useState<TestCaseField[]>([])
 
   const { projects } = useProjectStore()
   const { features, loading, fetchFeatures, deleteFeature } = useFeatureStore()
@@ -41,6 +49,21 @@ export default function FeaturesPage() {
       status: activeTab === 'draft' ? 'DRAFT' : undefined,
     })
   }, [projectId, search, dateFrom, dateTo, activeTab, fetchFeatures])
+
+  // Fetch Zephyr connection and template fields on mount
+  useEffect(() => {
+    if (!projectId) return
+
+    Promise.all([
+      zephyrAPI.getConnection(projectId),
+      templatesAPI.getTemplate(projectId)
+    ]).then(([conn, template]) => {
+      if (conn) setZephyrConn(conn)
+      if (template?.fields && template.fields.length > 0) {
+        setTemplateFields(template.fields)
+      }
+    }).catch(() => {})
+  }, [projectId])
 
   const sorted = useMemo(() => {
     const list = [...features]
@@ -111,11 +134,48 @@ export default function FeaturesPage() {
     setFeatureToDelete(null)
   }
 
+  const handleFeatureCreated = (feature: Feature, generateAI: boolean) => {
+    setPanelOpen(false)
+
+    if (generateAI) {
+      navigate(`/projects/${projectId}/features/${feature.id}/testcases?generate=true`)
+    } else {
+      toast.success(`Feature added — "${feature.name}"`)
+      fetchFeatures(projectId!)
+    }
+  }
+
   const draftCount = features.filter(f => f.status === 'DRAFT').length
   const allCount = features.length
 
+  const actions = (
+    <div className="flex items-center gap-3">
+      {zephyrConn ? (
+        <button
+          onClick={() => setZephyrSetupOpen(true)}
+          className="flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-lg px-4 h-[36px] text-[12.5px] font-medium cursor-pointer hover:bg-green-100 transition-colors"
+        >
+          ✓ Zephyr Connected
+        </button>
+      ) : (
+        <button
+          onClick={() => setZephyrSetupOpen(true)}
+          className="flex items-center gap-2 bg-white text-[#111] border border-[#D8D8D4] rounded-lg px-4 h-[36px] text-[12.5px] font-medium cursor-pointer hover:bg-[#FAFAF8] transition-colors"
+        >
+          ⚙ Connect Zephyr
+        </button>
+      )}
+      <button
+        onClick={() => navigate(`/projects/${projectId}/template`)}
+        className="flex items-center gap-2 bg-white text-[#111] border border-[#D8D8D4] rounded-lg px-4 h-[36px] text-[12.5px] font-medium cursor-pointer hover:bg-[#FAFAF8] transition-colors"
+      >
+        ⚙️ Template
+      </button>
+    </div>
+  )
+
   return (
-    <Layout title="Features">
+    <Layout title="Features" actions={actions}>
       {/* Breadcrumb */}
       <div className="mb-6 text-sm text-[#999]">
         <span>Projects</span>
@@ -330,6 +390,17 @@ export default function FeaturesPage() {
                   )}
                   <td className="p-4 text-right pr-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1.5 justify-end">
+                      {(feature._count?.testCases || 0) === 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/projects/${projectId}/features/${feature.id}/testcases?generate=true`)
+                          }}
+                          className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border border-[#C4C2F4] bg-[#EEEDF8] text-[#4F46E5] cursor-pointer hover:bg-[#4F46E5] hover:text-white hover:border-[#4F46E5] transition-all h-[26px] font-sans whitespace-nowrap"
+                        >
+                          ✦ Generate
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEditClick(feature)}
                         className="w-[26px] h-[26px] rounded-[6px] border border-[#E4E4E0] bg-white flex items-center justify-center cursor-pointer text-[11px] text-[#888] hover:bg-[#EEEDF8] hover:border-[#C4C2F4] hover:text-[#4F46E5] transition-all"
@@ -354,7 +425,12 @@ export default function FeaturesPage() {
       )}
 
       {/* Add Feature Panel */}
-      <AddFeaturePanel projectId={projectId!} open={panelOpen} onClose={() => setPanelOpen(false)} />
+      <AddFeaturePanel
+        projectId={projectId!}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        onCreated={handleFeatureCreated}
+      />
 
       {/* Edit Feature Modal */}
       <EditFeatureModal
@@ -378,6 +454,22 @@ export default function FeaturesPage() {
         loading={isDeleting}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Zephyr Setup Panel */}
+      <ZephyrSetupPanel
+        open={zephyrSetupOpen}
+        onClose={() => setZephyrSetupOpen(false)}
+        projectId={projectId!}
+        templateFields={templateFields}
+        onConnected={(conn) => {
+          const wasConnected = !!zephyrConn
+          setZephyrConn(conn)
+          setZephyrSetupOpen(false)
+          toast.success(wasConnected ? 'Zephyr Scale updated' : 'Zephyr Scale connected')
+        }}
+        isEdit={!!zephyrConn}
+        currentConnection={zephyrConn}
       />
     </Layout>
   )

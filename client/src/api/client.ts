@@ -6,6 +6,8 @@ const apiClient = axios.create({
   withCredentials: true,
 })
 
+let refreshPromise: Promise<string> | null = null
+
 apiClient.interceptors.request.use((config) => {
   const { accessToken } = useAuthStore.getState()
   if (accessToken) {
@@ -23,19 +25,33 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true
 
       try {
-        const response = await axios.post(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        )
-        const { accessToken } = response.data
-        useAuthStore.getState().setAuth(useAuthStore.getState().user!, accessToken)
+        // Prevent multiple simultaneous refresh requests
+        if (!refreshPromise) {
+          refreshPromise = (async () => {
+            const response = await axios.post(
+              `${apiClient.defaults.baseURL}/auth/refresh`,
+              {},
+              { withCredentials: true }
+            )
+            const { accessToken } = response.data
+            const user = useAuthStore.getState().user
+            if (user) {
+              useAuthStore.getState().setAuth(user, accessToken)
+            }
+            return accessToken
+          })()
+        }
+
+        const accessToken = await refreshPromise
+        refreshPromise = null
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return apiClient(originalRequest)
       } catch {
+        refreshPromise = null
         useAuthStore.getState().clearAuth()
         window.location.href = '/login'
+        return Promise.reject(error)
       }
     }
 

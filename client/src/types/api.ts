@@ -55,6 +55,7 @@ export type FeatureStatus = 'DRAFT' | 'FINAL'
 export type Feature = {
   id: string
   name: string
+  description?: string
   type: FeatureType
   status: FeatureStatus
   projectId: string
@@ -63,6 +64,49 @@ export type Feature = {
   _count?: {
     testCases: number
   }
+}
+
+export type Priority = 'HIGH' | 'MEDIUM' | 'LOW'
+export type TestCaseType = 'POSITIVE' | 'NEGATIVE' | 'EDGE_CASE'
+export type GeneratedBy = 'LLM' | 'HUMAN'
+
+export type TestCase = {
+  id: string
+  featureId: string
+  fieldValues: Record<string, any>
+  generatedBy: GeneratedBy
+  zephyrKey?: string | null
+  zephyrId?: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ZephyrFieldMapping = {
+  name: string
+  steps: string
+  objective?: string
+  priority?: string
+  precondition?: string
+}
+
+export type ZephyrConnection = {
+  id: string
+  jiraProjectKey: string
+  fieldMapping: ZephyrFieldMapping
+  connected: boolean
+}
+
+export type ZephyrExportResult = {
+  results: Array<{
+    testCaseId: string
+    zephyrKey: string
+    success: boolean
+    error?: string
+  }>
+  successCount: number
+  failCount: number
+  total: number
+  message?: string
 }
 
 export type ApiError = {

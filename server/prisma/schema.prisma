@@ -53,6 +53,7 @@ model Project {
   features       Feature[]
   jiraConnection JiraConnection?
   template       TestCaseTemplate?
+  zephyrConnection ZephyrConnection?
 }
 
 model JiraConnection {
@@ -78,7 +79,6 @@ model Ticket {
   source             TicketSource @default(MANUAL)
   projectId          String
   project            Project    @relation(fields: [projectId], references: [id])
-  testCases          TestCase[]
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 }
@@ -97,23 +97,17 @@ enum TicketSource {
 }
 
 model TestCase {
-  id             String           @id @default(uuid())
-  ticketId       String?
-  ticket         Ticket?          @relation(fields: [ticketId], references: [id])
-  featureId      String?
-  feature        Feature?         @relation(fields: [featureId], references: [id])
-  projectId      String
-  title          String
-  priority       Priority         @default(MEDIUM)
-  testType       TestType         @default(POSITIVE)
-  preconditions  String?          @db.Text
-  steps          Json
-  expectedResult String           @db.Text
-  fieldValues    Json?
-  generatedBy    GeneratedBy      @default(LLM)
-  versions       TestCaseVersion[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id            String           @id @default(uuid())
+  featureId     String
+  feature       Feature          @relation(fields: [featureId], references: [id])
+  fieldValues   Json             // { field_key: value } for every template field
+  generatedBy   GeneratedBy      @default(LLM)
+  zephyrKey     String?          // e.g. "MAP-T1" — set after successful export
+  zephyrId      Int?             // Zephyr internal numeric ID
+  versions      TestCaseVersion[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
 }
 
 enum Priority {
@@ -134,16 +128,17 @@ enum GeneratedBy {
 }
 
 model Feature {
-  id        String        @id @default(uuid())
-  name      String
-  type      FeatureType
-  status    FeatureStatus @default(DRAFT)
-  projectId String
-  project   Project       @relation(fields: [projectId], references: [id])
-  testCases TestCase[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  deletedAt DateTime?
+  id          String        @id @default(uuid())
+  name        String
+  description String?       @db.Text
+  type        FeatureType
+  status      FeatureStatus @default(DRAFT)
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id])
+  testCases   TestCase[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
 }
 
 enum FeatureType {
@@ -196,4 +191,15 @@ enum FieldType {
   MULTISELECT
   BOOLEAN
   NUMBER
+}
+
+model ZephyrConnection {
+  id             String   @id @default(uuid())
+  projectId      String   @unique
+  project        Project  @relation(fields: [projectId], references: [id])
+  apiToken       String   @db.Text   // AES-256 encrypted
+  jiraProjectKey String              // e.g. "MAP"
+  fieldMapping   Json                // { zephyrField: templateFieldKey }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

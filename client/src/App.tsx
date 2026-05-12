@@ -4,7 +4,9 @@ import LoginPage from './pages/LoginPage'
 import ProjectsPage from './pages/ProjectsPage'
 import TemplatePage from './pages/TemplatePage'
 import FeaturesPage from './pages/FeaturesPage'
+import TestCasesPage from './pages/TestCasesPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import ToastContainer from './components/ui/ToastContainer'
 import { useAuthStore } from './store/authStore'
 import { authAPI } from './api/auth'
 
@@ -80,8 +82,17 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/projects/:projectId/features/:featureId/testcases"
+          element={
+            <ProtectedRoute>
+              <TestCasesPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      <ToastContainer />
     </BrowserRouter>
   )
 }

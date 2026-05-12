@@ -6,11 +6,43 @@ import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
 import { Server as SocketIOServer } from 'socket.io'
+import swaggerJsdoc from 'swagger-jsdoc'
+import swaggerUi from 'swagger-ui-express'
 import { prisma } from '@/lib/prisma'
 import { redis } from '@/lib/redis'
 import logger from '@/lib/logger'
 import { errorHandler } from '@/middleware/errorHandler'
 import apiRouter from '@/routes'
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Regi API',
+      version: '1.0.0',
+      description: 'AI QA Assistant — Test Case Generation API',
+    },
+    servers: [
+      {
+        url: 'http://localhost:3001/api/v1',
+        description: 'Development server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/**/*.ts'],
+}
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions)
 
 // Create app and HTTP server
 const app = express()
@@ -37,21 +69,22 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
 
-// Rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  handler: (req, res) => {
-    res.status(429).json({
-      error: {
-        code: 'RATE_LIMITED',
-        message: 'Too many requests, please try again later',
-      },
-    })
-  },
-})
-
-app.use(limiter)
+// Rate limiter (disabled in development)
+if (process.env.NODE_ENV !== 'development') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    handler: (req, res) => {
+      res.status(429).json({
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many requests, please try again later',
+        },
+      })
+    },
+  })
+  app.use(limiter)
+}
 
 // Routes
 app.get('/health', (req, res) => {
@@ -60,6 +93,13 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
   })
+})
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.send(swaggerSpec)
 })
 
 app.use('/api/v1', apiRouter)

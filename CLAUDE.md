@@ -30,9 +30,11 @@ context/phase-6-llm-generation.md
 - context/phase-3-projects.md            ✅ done
 - context/phase-4-test-case-template-builder.md ✅ done
 - context/phase-5-features.md            ✅ done
-- context/phase-6-llm-generation.md      🔵 in progress
-- context/phase-7-review-editing.md      🔲 pending
-- context/phase-8-export.md              🔲 pending
+- context/phase-6-test-cases-and-generate-flow.md 🔵 in progress
+
+- context/phase-7-ai-generation-and-collapsible-sidebar.md      🔵 in progress
+- context/phase-8-zephyr-export.md 🔲 pending
+
 
 ## Architecture notes
 Read context/architecture.md to understand why key decisions were made.
