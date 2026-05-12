@@ -172,17 +172,64 @@ export const zephyrService = {
     parentId?: number | null
   ): Promise<number | null> {
     try {
+      // Step 1 — search for existing folder with same name + parent (paginate to get all)
+      const allFolders: any[] = []
+      let startAt = 0
+      const maxResults = 500
+
+      while (true) {
+        const searchRes = await axios.get(
+          `${ZEPHYR_BASE}/folders?projectKey=${jiraProjectKey}&folderType=TEST_CASE&maxResults=${maxResults}&startAt=${startAt}`,
+          {
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+            validateStatus: () => true,
+          }
+        )
+
+        if (searchRes.status !== 200) break
+
+        const values = searchRes.data?.values || []
+        if (values.length === 0) break
+
+        allFolders.push(...values)
+
+        if (values.length < maxResults) break
+        startAt += maxResults
+      }
+
+      console.log(`[Zephyr] Searching ${allFolders.length} folders for: "${folderName}" (parent: ${parentId ?? 'root'})`)
+
+      // Match by name AND parentId
+      const existing = allFolders.find(f => {
+        const nameMatch = f.name === folderName
+        const parentMatch = parentId != null
+          ? f.parentId === parentId
+          : (f.parentId === null || f.parentId === undefined)
+        return nameMatch && parentMatch
+      })
+
+      if (existing) {
+        console.log(`[Zephyr] Reusing existing folder: "${folderName}" (id: ${existing.id}, parent: ${existing.parentId})`)
+        return existing.id as number
+      }
+
+      // Step 2 — folder not found, create it
       const body: Record<string, any> = {
         projectKey: jiraProjectKey,
         name: folderName,
         folderType: 'TEST_CASE',
       }
-
-      if (parentId) {
+      if (parentId != null) {
         body.parentId = parentId
       }
 
-      const response = await axios.post(
+      console.log(`[Zephyr] Creating folder: "${folderName}" (parent: ${parentId ?? 'root'})`)
+
+      const createRes = await axios.post(
         `${ZEPHYR_BASE}/folders`,
         body,
         {
@@ -191,38 +238,20 @@ export const zephyrService = {
             'Content-Type': 'application/json',
           },
           timeout: 10000,
-          validateStatus: s => s < 500,
+          validateStatus: () => true,
         }
       )
 
-      if (response.status === 201 || response.status === 200) {
-        return response.data.id as number
+      if (createRes.status === 201 || createRes.status === 200) {
+        console.log(`[Zephyr] Created folder: "${folderName}" (id: ${createRes.data.id}, parent: ${parentId ?? 'root'})`)
+        return createRes.data.id as number
       }
 
-      if (response.status === 400) {
-        const search = await axios.get(
-          `${ZEPHYR_BASE}/folders?projectKey=${jiraProjectKey}&folderType=TEST_CASE&maxResults=200`,
-          {
-            headers: { Authorization: `Bearer ${apiToken}` },
-            timeout: 10000,
-          }
-        )
-        const values = search.data?.values || []
-
-        const existing = parentId
-          ? values.find(
-              (f: any) => f.name === folderName && f.parentId === parentId
-            )
-          : values.find(
-              (f: any) => f.name === folderName && !f.parentId
-            )
-
-        return existing?.id ?? null
-      }
-
+      console.log('[Zephyr] Folder create failed:', createRes.status, createRes.data)
       return null
+
     } catch (err: any) {
-      console.error('Folder creation error:', err?.response?.data || err.message)
+      console.error('[Zephyr] createOrGetFolder error:', err.message)
       return null
     }
   },
@@ -323,40 +352,97 @@ export const zephyrService = {
         ? String(fv[mapping.precondition] || '')
         : ''
       const priorityRaw = mapping.priority ? fv[mapping.priority] : null
-      const rawSteps = mapping.steps ? fv[mapping.steps] : []
 
-      const stepsArray: string[] = Array.isArray(rawSteps)
-        ? rawSteps.map(String)
-        : String(rawSteps || '').split('\n').filter(Boolean)
+      // ── Build steps array ──────────────────────────────────────
+      const rawSteps = mapping.steps ? fv[mapping.steps] : null
 
+      console.log('[Zephyr] raw steps value:', JSON.stringify(rawSteps))
+      console.log('[Zephyr] steps field key:', mapping.steps)
+      console.log('[Zephyr] fieldValues keys:', Object.keys(fv))
+
+      let stepsArray: string[] = []
+
+      if (Array.isArray(rawSteps)) {
+        // Normal case — array of strings or array of objects
+        stepsArray = rawSteps
+          .map(s => {
+            if (typeof s === 'string') return s.trim()
+            if (typeof s === 'object' && s !== null) {
+              // Could be { description: '...' } or { text: '...' } or { step: '...' }
+              return String(
+                s.description || s.text || s.step || s.action ||
+                Object.values(s)[0] || ''
+              ).trim()
+            }
+            return String(s || '').trim()
+          })
+          .filter(s => s.length > 0)
+
+      } else if (typeof rawSteps === 'string' && rawSteps.trim()) {
+        // Could be a JSON stringified array
+        try {
+          const parsed = JSON.parse(rawSteps)
+          if (Array.isArray(parsed)) {
+            stepsArray = parsed
+              .map(s => String(s || '').trim())
+              .filter(s => s.length > 0)
+          } else {
+            // Plain string with newlines
+            stepsArray = rawSteps
+              .split('\n')
+              .map(s => s.replace(/^\d+[\.\)]\s*/, '').trim())
+              .filter(s => s.length > 0)
+          }
+        } catch {
+          // Not JSON — treat as newline-separated plain text
+          stepsArray = rawSteps
+            .split('\n')
+            .map(s => s.replace(/^\d+[\.\)]\s*/, '').trim())
+            .filter(s => s.length > 0)
+        }
+      }
+
+      console.log('[Zephyr] parsed stepsArray:', stepsArray)
+
+      // Fallback — if no steps found at all, use objective as single step
+      if (stepsArray.length === 0 && objective) {
+        stepsArray = [String(objective)]
+      }
+
+      // Build Zephyr step objects
+      // description = the action the tester performs
+      // expectedResult = what should happen (only on last step)
       const zephyrSteps = stepsArray.map((stepText, i) => ({
         description: stepText,
-        expectedResult: i === stepsArray.length - 1 ? objective : '',
+        expectedResult: i === stepsArray.length - 1
+          ? String(objective || '')
+          : '',
       }))
 
-      if (zephyrSteps.length === 0 && objective) {
-        zephyrSteps.push({ description: objective, expectedResult: '' })
-      }
+      console.log('[Zephyr] zephyrSteps to send:', JSON.stringify(zephyrSteps))
+      // ── End steps ──────────────────────────────────────────────
 
       try {
         const tcBody: Record<string, any> = {
           projectKey: jiraProjectKey,
-          name,
-          objective,
-          precondition,
-          testScript: {
-            type: 'STEP_BY_STEP',
-            steps: zephyrSteps,
-          },
+          name: String(name),
+          objective: String(objective),
+          precondition: String(precondition),
           statusName: 'Draft',
-          priorityName: mapPriority(priorityRaw),
           labels: ['regi-generated'],
         }
 
+        // Use priority from test case if specified, otherwise omit it
+        if (priorityRaw) {
+          tcBody.priorityName = String(priorityRaw).trim()
+        }
+
+        // Add folder if available
         if (folderId) {
           tcBody.folderId = folderId
         }
 
+        // Create test case
         const response = await axios.post(
           `${ZEPHYR_BASE}/testcases`,
           tcBody,
@@ -372,18 +458,28 @@ export const zephyrService = {
         const zephyrKey: string = response.data.key
         const zephyrId: number = response.data.id
 
+        console.log(`[Zephyr] Created test case: ${zephyrKey}`)
+
+        // Add steps via dedicated endpoint
+        if (zephyrSteps.length > 0) {
+          await this.addTestSteps(apiToken, zephyrKey, zephyrSteps)
+        }
+
+        // Persist Zephyr identifiers
         await prisma.testCase.update({
           where: { id: tc.id },
           data: { zephyrKey, zephyrId },
         })
 
         results.push({ testCaseId: tc.id, zephyrKey, success: true })
+
       } catch (err: any) {
         const msg =
           err?.response?.data?.message ||
           err?.response?.data?.errorMessage ||
           err.message ||
           'Unknown error'
+        console.error(`[Zephyr] Export failed for test case ${tc.id}:`, msg)
         results.push({
           testCaseId: tc.id,
           zephyrKey: '',
@@ -398,6 +494,53 @@ export const zephyrService = {
       successCount: results.filter(r => r.success).length,
       failCount: results.filter(r => !r.success).length,
       total: testCases.length,
+    }
+  },
+
+  // ── Add test steps via dedicated endpoint ────────────────────
+
+  async addTestSteps(
+    apiToken: string,
+    testCaseKey: string,
+    steps: Array<{ description: string; expectedResult: string }>
+  ): Promise<void> {
+    if (steps.length === 0) return
+
+    try {
+      const payload = {
+        mode: 'OVERWRITE',
+        items: steps.map(step => ({
+          inline: {
+            description: step.description,
+            testData: '',
+            expectedResult: step.expectedResult || '',
+          },
+        })),
+      }
+
+      const response = await axios.post(
+        `${ZEPHYR_BASE}/testcases/${testCaseKey}/teststeps`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+          validateStatus: () => true,
+        }
+      )
+
+      if (response.status === 200 || response.status === 201) {
+        console.log(`[Zephyr] Added ${steps.length} steps to ${testCaseKey}`)
+      } else {
+        console.log(
+          `[Zephyr] Steps failed (${response.status}):`,
+          JSON.stringify(response.data).slice(0, 300)
+        )
+      }
+    } catch (err: any) {
+      console.error(`[Zephyr] addTestSteps error for ${testCaseKey}:`, err.message)
     }
   },
 }
