@@ -6,6 +6,7 @@ import { TestCase, TestCaseField, ZephyrConnection } from '@/types/api'
 interface ZephyrExportModalProps {
   open: boolean
   onClose: () => void
+  projectId: string
   featureId: string
   featureName: string
   testCases: TestCase[]
@@ -24,6 +25,7 @@ interface ExportResult {
 export default function ZephyrExportModal({
   open,
   onClose,
+  projectId,
   featureId,
   featureName,
   testCases,
@@ -48,14 +50,14 @@ export default function ZephyrExportModal({
   const { success: showSuccess, error: showError } = useToastStore()
 
   useEffect(() => {
-    if (!open || !featureId) return
+    if (!open || !projectId) return
     setLoadingFolders(true)
     zephyrAPI
-      .getProjectFolders(featureId.split('/').at(-2) || '')
+      .getProjectFolders(projectId)
       .then(f => setFolders(f))
       .catch(() => setFolders([]))
       .finally(() => setLoadingFolders(false))
-  }, [open, featureId])
+  }, [open, projectId])
 
   // Find the name field mapping key
   const nameField = useMemo(() => {

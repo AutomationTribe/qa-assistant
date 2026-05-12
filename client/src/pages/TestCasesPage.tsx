@@ -401,6 +401,7 @@ export default function TestCasesPage() {
               setSelectMode(false)
               setSelectedIds(new Set())
             }}
+            projectId={projectId!}
             featureId={featureId!}
             featureName={feature?.name || ''}
             testCases={testCases}
