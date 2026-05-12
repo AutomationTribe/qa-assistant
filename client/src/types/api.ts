@@ -25,7 +25,7 @@ export type Project = {
   templateConfig: TemplateConfig
   logins?: ProjectLogin[]
   createdAt: string
-  _count?: { tickets: number; testCases?: number }
+  _count?: { tickets: number; features?: number }
 }
 
 export type FieldType = 'TEXT' | 'TEXTAREA' | 'STEPS' | 'SELECT' | 'MULTISELECT' | 'BOOLEAN' | 'NUMBER'

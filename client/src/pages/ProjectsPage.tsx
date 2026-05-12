@@ -118,8 +118,8 @@ export default function ProjectsPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-[#111] truncate">{project.name}</h3>
                     <p className="text-[12px] text-[#999]">
-                      {project._count?.tickets || 0} tickets · {project._count?.testCases || 0}{' '}
-                      test cases
+                      {project._count?.tickets || 0} tickets · {project._count?.features || 0}{' '}
+                      features
                     </p>
                   </div>
                   <button
