@@ -170,18 +170,34 @@ export default function ZephyrExportModal({
   function buildFolderOptions(
     folderList: Array<{ id: number; name: string; parentId: number | null }>
   ): Array<{ id: number; label: string }> {
-    const roots = folderList.filter(f => !f.parentId)
-    const children = folderList.filter(f => !!f.parentId)
-
     const result: Array<{ id: number; label: string }> = []
+    const folderMap = new Map(folderList.map(f => [f.id, f]))
+
+    const getDepth = (folderId: number): number => {
+      const folder = folderMap.get(folderId)
+      if (!folder || !folder.parentId) return 0
+      return 1 + getDepth(folder.parentId)
+    }
+
+    const roots = folderList.filter(f => !f.parentId)
+
+    const addFolder = (folder: { id: number; name: string; parentId: number | null }) => {
+      const depth = getDepth(folder.id)
+      const indent = depth > 0 ? '  '.repeat(depth - 1) + '↳ ' : ''
+      result.push({ id: folder.id, label: indent + folder.name })
+    }
+
+    const addFolderAndChildren = (parentId: number | null) => {
+      const items = folderList.filter(f => f.parentId === parentId)
+      items.forEach(item => {
+        addFolder(item)
+        addFolderAndChildren(item.id)
+      })
+    }
 
     roots.forEach(root => {
-      result.push({ id: root.id, label: root.name })
-      children
-        .filter(c => c.parentId === root.id)
-        .forEach(child => {
-          result.push({ id: child.id, label: `  ↳ ${child.name}` })
-        })
+      addFolder(root)
+      addFolderAndChildren(root.id)
     })
 
     return result
@@ -340,9 +356,20 @@ export default function ZephyrExportModal({
                   <>
                     Will create:{' '}
                     <span className="font-mono text-[#4F46E5]">
-                      /{folders.find(f => f.id === selectedParentFolderId)?.name}
-                      {' / '}
-                      {featureName}
+                      {(() => {
+                        const path: string[] = []
+                        let folderId: number | null = selectedParentFolderId
+                        while (folderId !== null) {
+                          const folder = folders.find(f => f.id === folderId)
+                          if (folder) {
+                            path.unshift(folder.name)
+                            folderId = folder.parentId
+                          } else {
+                            break
+                          }
+                        }
+                        return '/' + path.join(' / ') + ' / ' + featureName
+                      })()}
                     </span>
                   </>
                 ) : (
