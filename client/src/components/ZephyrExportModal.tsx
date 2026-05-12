@@ -172,37 +172,10 @@ export default function ZephyrExportModal({
   function buildFolderOptions(
     folderList: Array<{ id: number; name: string; parentId: number | null }>
   ): Array<{ id: number; label: string }> {
-    const result: Array<{ id: number; label: string }> = []
-    const folderMap = new Map(folderList.map(f => [f.id, f]))
-
-    const getDepth = (folderId: number): number => {
-      const folder = folderMap.get(folderId)
-      if (!folder || !folder.parentId) return 0
-      return 1 + getDepth(folder.parentId)
-    }
-
-    const roots = folderList.filter(f => !f.parentId)
-
-    const addFolder = (folder: { id: number; name: string; parentId: number | null }) => {
-      const depth = getDepth(folder.id)
-      const indent = depth > 0 ? '  '.repeat(depth - 1) + '↳ ' : ''
-      result.push({ id: folder.id, label: indent + folder.name })
-    }
-
-    const addFolderAndChildren = (parentId: number | null) => {
-      const items = folderList.filter(f => f.parentId === parentId)
-      items.forEach(item => {
-        addFolder(item)
-        addFolderAndChildren(item.id)
-      })
-    }
-
-    roots.forEach(root => {
-      addFolder(root)
-      addFolderAndChildren(root.id)
-    })
-
-    return result
+    // Show only parent folders (parentId is null)
+    return folderList
+      .filter(f => !f.parentId)
+      .map(f => ({ id: f.id, label: f.name }))
   }
 
   const successCount = Array.from(exportResults.values()).filter(

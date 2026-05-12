@@ -125,26 +125,41 @@ export const zephyrService = {
     const apiToken = decrypt(conn.apiToken)
 
     try {
-      const response = await axios.get(
-        `${ZEPHYR_BASE}/folders?projectKey=${conn.jiraProjectKey}&folderType=TEST_CASE&maxResults=200`,
-        {
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-          validateStatus: s => s < 500,
-        }
-      )
+      const allFolders: Array<{ id: number; name: string; parentId: number | null }> = []
+      let startAt = 0
+      const maxResults = 500
 
-      if (response.status !== 200) return []
+      while (true) {
+        const response = await axios.get(
+          `${ZEPHYR_BASE}/folders?projectKey=${conn.jiraProjectKey}&folderType=TEST_CASE&maxResults=${maxResults}&startAt=${startAt}`,
+          {
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+            validateStatus: s => s < 500,
+          }
+        )
 
-      const values = response.data?.values || []
-      return values.map((f: any) => ({
-        id: f.id as number,
-        name: f.name as string,
-        parentId: f.parentId ?? null,
-      }))
+        if (response.status !== 200) break
+
+        const values = response.data?.values || []
+        if (values.length === 0) break
+
+        allFolders.push(
+          ...values.map((f: any) => ({
+            id: f.id as number,
+            name: f.name as string,
+            parentId: f.parentId ?? null,
+          }))
+        )
+
+        if (values.length < maxResults) break
+        startAt += maxResults
+      }
+
+      return allFolders
     } catch {
       return []
     }
