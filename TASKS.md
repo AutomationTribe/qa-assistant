@@ -212,14 +212,17 @@
    - Toast notification after feature creation (when generate = off)
 
 ✅ Test Cases page (client)
-   - Files: client/src/pages/TestCasesPage.tsx
-   - Feature info bar: name, type badge, AI Generated pill (if generated), test count
-   - Test cases table with columns: title, priority, type, steps, expected result, actions
-   - Inline edit: click pencil, row shows input fields with Save/Cancel
+   - Files: client/src/pages/TestCasesPage.tsx, client/src/index.css
+   - Expandable row table: chevron toggles detail view, steps split into Action | Test data | Expected result
+   - Summary row: test case name, priority badge, type badge, delete button
+   - Expanded detail: Objective textarea, Preconditions textarea, Steps table with 3 columns
+   - Steps editor: add/remove steps, edit each part (action, data, expected) separately
+   - Other template fields shown below steps (if any)
    - Inline delete: click trash, row shows confirmation with Yes/Cancel
-   - Empty state: "No test cases yet" with Generate + Add buttons
+   - Save per row (in normal mode) or Save all (in allEditMode after AI generation)
+   - Empty state: "No test cases yet" with Generate button
    - Generating state: skeleton rows + "✦ Generating..." label
-   - Topbar: Regenerate, Export CSV, Add test case buttons
+   - Topbar: Save all (allEditMode only), Regenerate, Export to Zephyr/Connect Zephyr, Add test case buttons
    - Breadcrumb navigation
    - Badge colors: Priority (HIGH/MEDIUM/LOW) and Type (POSITIVE/NEGATIVE/EDGE_CASE)
 

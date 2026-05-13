@@ -1,593 +1,714 @@
-# Phase 6 — Test Cases Table + AI Generate Flow
+# Phase 6 — Test Cases Table + AI Generate Flow (Updated)
 
 ## What we are building
-This phase wires up the complete test case workflow:
-- Add Feature panel gets a Generate AI toggle
-- Toggle ON → clicking Add Feature redirects to the test cases table for that feature
-- Toggle OFF → clicking Add Feature closes the panel and shows the features table
-- Features with 0 test cases show a Generate button in the Actions column
-- Clicking any feature row navigates to its test cases table
-- Test cases table has inline edit and inline delete with confirmation
+1. TestCasesPage — expandable row table with Objective, Preconditions, and per-step Action/Test Data/Expected Result
+2. AI generation — on feature create with generate ON, redirect to test cases page with all rows open in edit mode
+3. Collapsible sidebar on test cases page
+4. Inline delete confirmation
+5. Save per row or Save all
 
 ## Reference design
-ui/features-flow-v4-fixed.html — walk all 8 steps before implementing
-
-## Data hierarchy reminder
-Project → Feature → Test Cases
+ui/features-flow-v4-fixed.html — walk all 5 steps before writing any code
 
 ---
 
-## Database changes
+## Data shape
 
-### server/prisma/schema.prisma
-Add TestCase model linked to Feature:
+### TestCase.fieldValues stores all fields as a flat JSON object
+The keys come from the project template. Standard keys the AI generates:
 
-```prisma
-model TestCase {
-  id             String      @id @default(uuid())
-  featureId      String
-  feature        Feature     @relation(fields: [featureId], references: [id])
-  title          String
-  priority       Priority    @default(MEDIUM)
-  testType       TestCaseType @default(POSITIVE)
-  steps          Json        // array of strings
-  expectedResult String      @db.Text
-  preconditions  String?     @db.Text
-  generatedBy    GeneratedBy @default(LLM)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
-}
-
-enum Priority {
-  HIGH
-  MEDIUM
-  LOW
-}
-
-enum TestCaseType {
-  POSITIVE
-  NEGATIVE
-  EDGE_CASE
-}
-
-enum GeneratedBy {
-  LLM
-  MANUAL
+```json
+{
+  "name": "Successful login with valid credentials",
+  "objective": "Verify a registered user can log in with valid credentials",
+  "pre_conditions": "User registered with email: user@test.com | Password: Test@1234",
+  "steps": [
+    "Navigate to login page | URL: /auth/login | Login form displays",
+    "Enter credentials and click Sign In | user@test.com / Test@1234 | User redirected to dashboard"
+  ],
+  "priority": "High"
 }
 ```
 
-Update Feature model to include testCases relation and count:
-```prisma
-model Feature {
-  // existing fields...
-  testCases   TestCase[]
-}
-```
+Steps use pipe-separated format: `"Action | Test data | Expected result"`
 
-Show migration SQL before running:
-npx prisma migrate dev --create-only --name add-test-cases
+### Template fields that map to the expanded row UI
+
+| Template field key | UI section | Display |
+|---|---|---|
+| `name` / `test_title` | Row header (tc-title) | Read only in summary |
+| `objective` | Top field left | Editable textarea |
+| `pre_conditions` / `preconditions` | Top field right | Editable textarea |
+| `steps` | Steps table | One row per step, split on pipe |
+| `priority` | Summary badge | Editable select |
+
+Any other template fields are shown below the steps table as generic textareas labelled with their field name.
 
 ---
 
-## Server files to create
+## Database — no changes needed
+TestCase.fieldValues: Json — already correct
 
-### server/src/services/testCaseService.ts
+---
 
-listTestCases(featureId, workspaceId):
-- Verify feature belongs to a project in the workspace
-- Return all non-deleted test cases for the feature
-- Order by createdAt asc
-- Return with full fields
-
-createTestCase(featureId, workspaceId, data):
-- Verify feature ownership
-- Create with generatedBy: MANUAL
-- Return created test case
-
-createManyTestCases(featureId, workspaceId, testCases[]):
-- Verify feature ownership
-- Create all in a single Prisma createMany
-- Return all created test cases
-- Used by the LLM worker after generation
-
-updateTestCase(testCaseId, workspaceId, data):
-- Verify ownership chain: testCase → feature → project → workspace
-- Update only provided fields
-- Return updated test case
-
-deleteTestCase(testCaseId, workspaceId):
-- Verify ownership
-- Soft delete: set deletedAt = now()
-- Return { message: 'Test case deleted' }
-
-generateTestCases(featureId, workspaceId):
-- Verify feature ownership
-- Fetch the project's template fields
-- Build prompt from feature name + description + template fields
-- Call OpenAI (use existing llm/orchestrator.ts pattern)
-- Validate response matches template field keys
-- Save all generated test cases via createManyTestCases
-- Update feature so _count.testCases reflects new count
-- Return the created test cases array
-
-### server/src/controllers/testCaseController.ts
-
-list(req, res, next):
-- featureId from req.params
-- Return 200 { testCases: [] }
-
-create(req, res, next):
-- Validate body: { title, priority?, testType?, steps, expectedResult, preconditions? }
-- Return 201 { testCase }
-
-generate(req, res, next):
-- featureId from req.params
-- Call testCaseService.generateTestCases
-- Return 200 { testCases: [], count: number }
-
-update(req, res, next):
-- testCaseId from req.params
-- All fields optional
-- Return 200 { testCase }
-
-remove(req, res, next):
-- testCaseId from req.params
-- Return 200 { message: 'Test case deleted' }
-
-### server/src/routes/testcases.ts
-All routes protected with authenticate middleware.
-
-```
-GET    /api/v1/features/:featureId/testcases
-POST   /api/v1/features/:featureId/testcases
-POST   /api/v1/features/:featureId/testcases/generate
-PATCH  /api/v1/testcases/:testCaseId
-DELETE /api/v1/testcases/:testCaseId
-```
-
-Mount in server/src/routes/index.ts.
-Add Swagger JSDoc comments to every route.
-Update context/api-endpoints.md with all five endpoints.
+## Server — no changes needed
+listTestCases and generateTestCases already return { testCases, fields }
 
 ---
 
 ## Client files to create
 
-### client/src/types/api.ts
-Add to existing file:
+### client/src/pages/TestCasesPage.tsx
 
+#### Layout
+```
+<div style="display:flex;height:100vh;overflow:hidden">
+  <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+  <main>
+    <Topbar breadcrumb={...} actions={...} />
+    <div className="content">
+      {generating && <SkeletonRows />}
+      {allEditMode && <ReviewBanner count={testCases.length} onSaveAll={handleSaveAll} />}
+      <FeatureBar feature={feature} />
+      <TestCasesTable ... />
+    </div>
+  </main>
+</div>
+```
+
+#### Sidebar collapse state
 ```typescript
-export type Priority = 'HIGH' | 'MEDIUM' | 'LOW'
-export type TestCaseType = 'POSITIVE' | 'NEGATIVE' | 'EDGE_CASE'
-export type GeneratedBy = 'LLM' | 'MANUAL'
-
-export type TestCase = {
-  id: string
-  featureId: string
-  title: string
-  priority: Priority
-  testType: TestCaseType
-  steps: string[]
-  expectedResult: string
-  preconditions?: string
-  generatedBy: GeneratedBy
-  createdAt: string
-  updatedAt: string
+const [sidebarCollapsed, setSidebarCollapsed] = useState(
+  () => localStorage.getItem('sidebarCollapsed') === 'true'
+)
+const toggleSidebar = () => {
+  const next = !sidebarCollapsed
+  setSidebarCollapsed(next)
+  localStorage.setItem('sidebarCollapsed', String(next))
 }
 ```
 
-### client/src/api/testcases.ts
+Sidebar renders at `w-[208px]` expanded, `w-[48px]` collapsed.
+When collapsed: show only icons, hide text labels, hide user name.
+Collapse toggle button at the bottom of the sidebar with a `◀` icon
+that rotates 180deg when collapsed (`transition-transform duration-200`).
 
+#### On mount behaviour
 ```typescript
-import apiClient from './client'
-import { TestCase } from '@/types/api'
+const shouldGenerate = searchParams.get('generate') === 'true'
 
-export const testCasesAPI = {
-  async listTestCases(featureId: string): Promise<TestCase[]> {
-    const res = await apiClient.get<{ testCases: TestCase[] }>(
-      `/features/${featureId}/testcases`
-    )
-    return res.data.testCases
-  },
+useEffect(() => {
+  if (!featureId) return
+  if (shouldGenerate) {
+    navigate(location.pathname, { replace: true })
+    setAllEditMode(true)
+    handleGenerate()
+  } else {
+    fetchTestCases(featureId)
+  }
+}, [featureId])
+```
 
-  async createTestCase(
-    featureId: string,
-    data: {
-      title: string
-      priority?: Priority
-      testType?: TestCaseType
-      steps: string[]
-      expectedResult: string
-      preconditions?: string
+#### Edit state
+```typescript
+// allEditMode — all rows open (after AI generation)
+const [allEditMode, setAllEditMode] = useState(false)
+
+// expandedIds — set of row IDs currently expanded
+// In allEditMode all are expanded. In normal mode user clicks to expand.
+const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+// deletingId — which row is showing delete confirmation
+const [deletingId, setDeletingId] = useState<string | null>(null)
+
+// drafts — local edits keyed by testCase id, value is full fieldValues
+const [drafts, setDrafts] = useState<Record<string, Record<string, any>>>({})
+```
+
+When allEditMode becomes true after generation, expand all rows
+and pre-populate drafts:
+```typescript
+useEffect(() => {
+  if (allEditMode && testCases.length > 0) {
+    const ids = new Set(testCases.map(tc => tc.id))
+    setExpandedIds(ids)
+    const init: Record<string, Record<string, any>> = {}
+    testCases.forEach(tc => { init[tc.id] = { ...tc.fieldValues } })
+    setDrafts(init)
+  }
+}, [testCases, allEditMode])
+```
+
+#### Toggle row expand
+```typescript
+const toggleExpand = (id: string) => {
+  if (allEditMode) return // in allEditMode all rows stay open
+  setExpandedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+  // pre-populate draft when opening
+  if (!expandedIds.has(id)) {
+    const tc = testCases.find(t => t.id === id)
+    if (tc) {
+      setDrafts(prev => ({ ...prev, [id]: { ...tc.fieldValues } }))
     }
-  ): Promise<TestCase> {
-    const res = await apiClient.post<{ testCase: TestCase }>(
-      `/features/${featureId}/testcases`,
-      data
-    )
-    return res.data.testCase
-  },
-
-  async generateTestCases(featureId: string): Promise<TestCase[]> {
-    const res = await apiClient.post<{ testCases: TestCase[] }>(
-      `/features/${featureId}/testcases/generate`
-    )
-    return res.data.testCases
-  },
-
-  async updateTestCase(
-    testCaseId: string,
-    data: Partial<Omit<TestCase, 'id' | 'featureId' | 'createdAt' | 'updatedAt'>>
-  ): Promise<TestCase> {
-    const res = await apiClient.patch<{ testCase: TestCase }>(
-      `/testcases/${testCaseId}`,
-      data
-    )
-    return res.data.testCase
-  },
-
-  async deleteTestCase(testCaseId: string): Promise<void> {
-    await apiClient.delete(`/testcases/${testCaseId}`)
-  },
+  }
 }
 ```
 
-### client/src/store/testCaseStore.ts
-
+#### Update draft field
 ```typescript
-import { create } from 'zustand'
-import { TestCase } from '@/types/api'
-import { testCasesAPI } from '@/api/testcases'
+const updateDraft = (id: string, key: string, value: any) => {
+  setDrafts(prev => ({
+    ...prev,
+    [id]: { ...(prev[id] || {}), [key]: value }
+  }))
+}
+```
 
-interface TestCaseStore {
-  testCases: TestCase[]
-  loading: boolean
-  generating: boolean
-  error: string | null
-  fetchTestCases(featureId: string): Promise<void>
-  generateTestCases(featureId: string): Promise<TestCase[]>
-  updateTestCase(testCaseId: string, data: Partial<TestCase>): Promise<void>
-  deleteTestCase(testCaseId: string): Promise<void>
-  clearTestCases(): void
+#### Update single step in draft
+Steps are stored as an array. Updating one step:
+```typescript
+const updateStep = (id: string, stepIndex: number, part: 'action' | 'data' | 'expected', value: string) => {
+  const draft = drafts[id] || testCases.find(tc => tc.id === id)?.fieldValues || {}
+  const stepsKey = findStepsKey(fields)
+  const steps: string[] = [...(draft[stepsKey] || [])]
+
+  // Parse existing step or create new one
+  const parts = (steps[stepIndex] || '').split('|').map(s => s.trim())
+  while (parts.length < 3) parts.push('')
+
+  if (part === 'action') parts[0] = value
+  if (part === 'data') parts[1] = value
+  if (part === 'expected') parts[2] = value
+
+  steps[stepIndex] = parts.join(' | ')
+  updateDraft(id, stepsKey, steps)
+}
+```
+
+#### Add/remove step
+```typescript
+const addStep = (id: string) => {
+  const draft = drafts[id] || {}
+  const stepsKey = findStepsKey(fields)
+  const steps = [...(draft[stepsKey] || []), ' | | ']
+  updateDraft(id, stepsKey, steps)
 }
 
-export const useTestCaseStore = create<TestCaseStore>((set, get) => ({
-  testCases: [],
-  loading: false,
-  generating: false,
-  error: null,
+const removeStep = (id: string, stepIndex: number) => {
+  const draft = drafts[id] || {}
+  const stepsKey = findStepsKey(fields)
+  const steps = [...(draft[stepsKey] || [])]
+  steps.splice(stepIndex, 1)
+  updateDraft(id, stepsKey, steps)
+}
+```
 
-  fetchTestCases: async (featureId) => {
-    set({ loading: true, error: null })
-    try {
-      const testCases = await testCasesAPI.listTestCases(featureId)
-      set({ testCases, loading: false })
-    } catch {
-      set({ error: 'Failed to load test cases', loading: false })
-    }
-  },
+#### Find field keys helper
+```typescript
+// Find the key used for steps field (type STEPS)
+const findStepsKey = (fields: TestCaseField[]): string => {
+  return fields.find(f => f.type === 'STEPS')?.key || 'steps'
+}
 
-  generateTestCases: async (featureId) => {
-    set({ generating: true, error: null })
-    try {
-      const testCases = await testCasesAPI.generateTestCases(featureId)
-      set({ testCases, generating: false })
-      return testCases
-    } catch {
-      set({ error: 'Failed to generate test cases', generating: false })
-      return []
-    }
-  },
+// Find objective field key
+const findObjectiveKey = (fields: TestCaseField[]): string | null => {
+  return fields.find(f =>
+    f.key.includes('objective') || f.key.includes('expected_result')
+  )?.key || null
+}
 
-  updateTestCase: async (testCaseId, data) => {
-    const updated = await testCasesAPI.updateTestCase(testCaseId, data)
-    set(state => ({
-      testCases: state.testCases.map(tc =>
-        tc.id === testCaseId ? updated : tc
-      )
-    }))
-  },
+// Find preconditions field key
+const findPreconditionsKey = (fields: TestCaseField[]): string | null => {
+  return fields.find(f =>
+    f.key.includes('precondition') || f.key.includes('pre_condition')
+  )?.key || null
+}
 
-  deleteTestCase: async (testCaseId) => {
-    await testCasesAPI.deleteTestCase(testCaseId)
-    set(state => ({
-      testCases: state.testCases.filter(tc => tc.id !== testCaseId)
-    }))
-  },
+// Fields to exclude from the "other fields" section
+// (already shown in the top section or steps)
+const HANDLED_FIELD_TYPES = ['STEPS']
+const getOtherFields = (fields: TestCaseField[]) => {
+  const stepsKey = findStepsKey(fields)
+  const objKey = findObjectiveKey(fields)
+  const preKey = findPreconditionsKey(fields)
+  const nameKey = fields.find(f =>
+    f.key.includes('name') || f.key.includes('title')
+  )?.key
+  const priorityKey = fields.find(f => f.key.includes('priority'))?.key
 
-  clearTestCases: () => set({ testCases: [], error: null }),
-}))
+  const excludedKeys = [stepsKey, objKey, preKey, nameKey, priorityKey].filter(Boolean)
+  return fields.filter(f => !excludedKeys.includes(f.key))
+}
+```
+
+#### handleSaveAll
+```typescript
+const handleSaveAll = async () => {
+  try {
+    await Promise.all(
+      testCases.map(tc => {
+        const draft = drafts[tc.id]
+        if (!draft) return Promise.resolve()
+        return updateTestCase(tc.id, draft)
+      })
+    )
+    setAllEditMode(false)
+    setExpandedIds(new Set())
+    setDrafts({})
+    toast.success('All test cases saved')
+  } catch {
+    toast.error('Failed to save. Please try again.')
+  }
+}
+```
+
+#### handleSaveOne
+```typescript
+const handleSaveOne = async (id: string) => {
+  const draft = drafts[id]
+  if (!draft) {
+    setExpandedIds(prev => { const n = new Set(prev); n.delete(id); return n })
+    return
+  }
+  try {
+    await updateTestCase(id, draft)
+    setExpandedIds(prev => { const n = new Set(prev); n.delete(id); return n })
+    const next = { ...drafts }
+    delete next[id]
+    setDrafts(next)
+    toast.success('Test case saved')
+  } catch {
+    toast.error('Failed to save test case')
+  }
+}
+```
+
+#### handleDelete
+```typescript
+const handleDelete = async (id: string) => {
+  try {
+    await deleteTestCase(id)
+    setDeletingId(null)
+    toast.success('Test case deleted')
+  } catch {
+    toast.error('Failed to delete')
+  }
+}
 ```
 
 ---
 
-## Client files to update
-
-### client/src/components/AddFeaturePanel.tsx
-Add the Generate AI toggle below the feature type field.
-
-New state variable:
-```typescript
-const [generateAI, setGenerateAI] = useState(false)
-```
-
-Add this block below the feature type select and before the panel footer:
+## TestCasesTable component structure
 
 ```tsx
-{/* Generate toggle */}
-<div
-  onClick={() => setGenerateAI(prev => !prev)}
-  className={[
-    'border-[1.5px] rounded-xl p-3.5 cursor-pointer transition-all select-none',
-    generateAI
-      ? 'border-[#4F46E5] bg-[#F5F4FD]'
-      : 'border-[#D8D8D4] bg-white',
-  ].join(' ')}
->
-  <div className="flex items-center justify-between gap-3">
-    <div className={`flex items-center gap-2 text-[13px] font-medium ${
-      generateAI ? 'text-[#333]' : 'text-[#333]'
-    }`}>
-      <span className={generateAI ? 'opacity-100' : 'opacity-35'}>✦</span>
-      Generate test cases with AI
-    </div>
-    {/* Toggle switch */}
-    <div className={`w-[35px] h-[20px] rounded-full relative flex-shrink-0 transition-colors ${
-      generateAI ? 'bg-[#4F46E5]' : 'bg-[#D0D0CC]'
-    }`}>
-      <div className={`w-[14px] h-[14px] bg-white rounded-full absolute top-[3px] transition-all shadow-sm ${
-        generateAI ? 'left-[18px]' : 'left-[3px]'
-      }`}/>
-    </div>
+<div className="bg-white border border-[#EBEBEB] rounded-xl overflow-hidden">
+  {/* Header row */}
+  <div className="grid grid-cols-[30px_1fr_75px_90px_72px] bg-[#FAFAF8] border-b">
+    <div /> {/* chevron col */}
+    <div className="th">Test case</div>
+    <div className="th">Priority</div>
+    <div className="th">Type</div>
+    <div className="th text-right pr-3">Actions</div>
   </div>
-  <p className={`text-[12px] mt-1.5 leading-[1.5] ${
-    generateAI ? 'text-[#6B64D0]' : 'text-[#888]'
-  }`}>
-    {generateAI
-      ? 'AI will generate test cases using your template after adding this feature.'
-      : 'Enable to automatically generate test cases using your template after adding this feature.'
-    }
-  </p>
+
+  {testCases.map(tc => {
+    const isExpanded = expandedIds.has(tc.id)
+    const isDeleting = deletingId === tc.id
+    const draft = drafts[tc.id] || tc.fieldValues
+
+    if (isDeleting) return <DeleteConfirmRow key={tc.id} tc={tc} onConfirm={handleDelete} onCancel={() => setDeletingId(null)} />
+
+    return (
+      <div key={tc.id} className="border-b last:border-b-0">
+        {/* Summary row */}
+        <div
+          className="grid grid-cols-[30px_1fr_75px_90px_72px] items-center cursor-pointer hover:bg-[#FAFAF9]"
+          style={isExpanded ? { background: '#FAFAFE' } : {}}
+          onClick={() => toggleExpand(tc.id)}
+        >
+          <div className={`tc-chev ${isExpanded ? 'open' : ''}`}>▶</div>
+          <div className="p-3">
+            <div className="text-[13px] font-medium text-[#111]">
+              {draft[findNameKey(fields)] || 'Untitled test case'}
+            </div>
+            <div className="text-[10.5px] text-[#C0C0BC] font-mono mt-0.5">
+              TC-{String(index + 1).padStart(3, '0')}
+            </div>
+          </div>
+          <div className="p-3"><PriorityBadge value={draft[findPriorityKey(fields)]} /></div>
+          <div className="p-3"><TypeBadge value={draft[findTypeKey(fields)]} /></div>
+          <div className="p-3 flex gap-1 justify-end" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setDeletingId(tc.id)} className="icon-btn danger">🗑</button>
+          </div>
+        </div>
+
+        {/* Expanded detail */}
+        {isExpanded && (
+          <div className="bg-[#FAFAFE] border-t border-[#EBEBEB] px-4 py-4 pl-10">
+
+            {/* Objective + Preconditions */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {findObjectiveKey(fields) && (
+                <div>
+                  <label className="field-label">Objective</label>
+                  <textarea
+                    className="field-textarea"
+                    value={draft[findObjectiveKey(fields)!] || ''}
+                    onChange={e => updateDraft(tc.id, findObjectiveKey(fields)!, e.target.value)}
+                  />
+                </div>
+              )}
+              {findPreconditionsKey(fields) && (
+                <div>
+                  <label className="field-label">Preconditions</label>
+                  <textarea
+                    className="field-textarea"
+                    value={draft[findPreconditionsKey(fields)!] || ''}
+                    onChange={e => updateDraft(tc.id, findPreconditionsKey(fields)!, e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Steps divider */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[11px] font-semibold text-[#888] uppercase tracking-wide">Test steps</span>
+              <div className="flex-1 h-px bg-[#EBEBEB]" />
+            </div>
+
+            {/* Steps table */}
+            <div className="bg-white border border-[#EBEBEB] rounded-[9px] overflow-hidden mb-3">
+              {/* Steps table header */}
+              <div className="grid grid-cols-[28px_1fr_1fr_1fr_28px] bg-[#F5F5F3] border-b border-[#EBEBEB]">
+                <div className="step-th">#</div>
+                <div className="step-th">Action</div>
+                <div className="step-th">Test data</div>
+                <div className="step-th">Expected result</div>
+                <div />
+              </div>
+
+              {/* Step rows */}
+              {parseSteps(draft[findStepsKey(fields)]).map((step, i) => (
+                <div key={i} className="grid grid-cols-[28px_1fr_1fr_1fr_28px] border-b last:border-b-0">
+                  <div className="step-num">{i + 1}</div>
+                  <div className="step-cell">
+                    <textarea
+                      className="step-input"
+                      value={step.action}
+                      onChange={e => updateStep(tc.id, i, 'action', e.target.value)}
+                    />
+                  </div>
+                  <div className="step-cell">
+                    <textarea
+                      className="step-input"
+                      value={step.data}
+                      onChange={e => updateStep(tc.id, i, 'data', e.target.value)}
+                    />
+                  </div>
+                  <div className="step-cell">
+                    <textarea
+                      className="step-input"
+                      value={step.expected}
+                      onChange={e => updateStep(tc.id, i, 'expected', e.target.value)}
+                    />
+                  </div>
+                  <div className="step-del border-l border-[#EBEBEB] flex items-start pt-2 justify-center">
+                    <button onClick={() => removeStep(tc.id, i)} className="icon-btn danger small">✕</button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add step */}
+              <div className="p-2 border-t border-[#EBEBEB]">
+                <button onClick={() => addStep(tc.id)} className="add-step-btn">
+                  ＋ Add step
+                </button>
+              </div>
+            </div>
+
+            {/* Other template fields (if any) */}
+            {getOtherFields(fields).map(field => (
+              <div key={field.key} className="mb-3">
+                <label className="field-label">{field.name}</label>
+                <textarea
+                  className="field-textarea"
+                  value={String(draft[field.key] || '')}
+                  onChange={e => updateDraft(tc.id, field.key, e.target.value)}
+                />
+              </div>
+            ))}
+
+            {/* Row actions */}
+            {!allEditMode && (
+              <div className="flex gap-2 mt-1">
+                <button onClick={() => handleSaveOne(tc.id)} className="btn-g text-[11.5px]">
+                  ✓ Save
+                </button>
+                <button
+                  onClick={() => {
+                    setExpandedIds(prev => { const n = new Set(prev); n.delete(tc.id); return n })
+                  }}
+                  className="btn-s text-[11.5px]"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  })}
+
+  {/* Pagination */}
+  <div className="pagination">...</div>
 </div>
 ```
 
-Update handleCreate to pass generateAI back to the parent:
+#### parseSteps helper
+Steps are stored as pipe-separated strings. Parse into objects:
 ```typescript
-// Change the onClose prop signature to also accept the new feature and generateAI flag
-interface AddFeaturePanelProps {
-  projectId: string
-  open: boolean
-  onClose: () => void
-  onCreated: (feature: Feature, generateAI: boolean) => void
-}
+function parseSteps(raw: any): Array<{ action: string; data: string; expected: string }> {
+  if (!raw) return [{ action: '', data: '', expected: '' }]
 
-// In handleCreate, after successful creation:
-onCreated(createdFeature, generateAI)
-```
+  const arr: string[] = Array.isArray(raw) ? raw : [String(raw)]
 
-The submit button always says "Add Feature" regardless of toggle state:
-```tsx
-<button className="btn-p ...">Add Feature</button>
-```
-
-### client/src/pages/FeaturesPage.tsx
-Update to handle the onCreated callback from AddFeaturePanel.
-
-Add imports:
-```typescript
-import { useTestCaseStore } from '@/store/testCaseStore'
-```
-
-Add state:
-```typescript
-const [redirectingFeatureId, setRedirectingFeatureId] = useState<string | null>(null)
-const { generateTestCases } = useTestCaseStore()
-```
-
-Replace onClose with onCreated handler:
-```typescript
-const handleFeatureCreated = async (feature: Feature, generateAI: boolean) => {
-  setPanelOpen(false)
-
-  if (generateAI) {
-    // Redirect to test cases page — generation happens there
-    navigate(`/projects/${projectId}/features/${feature.id}/testcases?generate=true`)
-  } else {
-    // Stay on features table — show toast
-    setToastMessage(`Feature added — "${feature.name}"`)
-    setToastVisible(true)
-    // Refresh features list to show new row
-    fetchFeatures(projectId!)
-  }
+  return arr.map(s => {
+    const parts = String(s || '').split('|').map(p => p.trim())
+    return {
+      action: parts[0] || '',
+      data: parts[1] || '',
+      expected: parts[2] || '',
+    }
+  })
 }
 ```
 
-Update the Generate button in the Actions column:
+---
+
+## Topbar buttons
+
 ```tsx
-<button
-  onClick={e => {
-    e.stopPropagation()
-    navigate(`/projects/${projectId}/features/${feature.id}/testcases?generate=true`)
-  }}
-  className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border border-[#C4C2F4] bg-[#EEEDF8] text-[#4F46E5] cursor-pointer hover:bg-[#4F46E5] hover:text-white hover:border-[#4F46E5] transition-all h-[26px] font-sans whitespace-nowrap"
->
-  ✦ Generate
-</button>
+<div className="topbar-right">
+  {/* Save all — only visible in allEditMode */}
+  {allEditMode && testCases.length > 0 && (
+    <button onClick={handleSaveAll} className="btn-g">
+      ✓ Save all
+    </button>
+  )}
+
+  <button onClick={handleRegenerate} className="btn-s">
+    ✦ Regenerate
+  </button>
+
+  {/* Zephyr export */}
+  {zephyrConn ? (
+    <button onClick={() => setExportModalOpen(true)} className="btn-s">
+      ↗ Export to Zephyr
+    </button>
+  ) : (
+    <button onClick={() => setZephyrSetupOpen(true)} className="btn-s text-[#888]">
+      ⚙ Connect Zephyr
+    </button>
+  )}
+
+  <button className="btn-p">＋ Add test case</button>
+</div>
 ```
 
-Update row onClick to navigate to test cases:
+---
+
+## AI review banner
+
+Show when allEditMode is true and not generating:
+
 ```tsx
-onClick={() => navigate(`/projects/${projectId}/features/${feature.id}/testcases`)}
+{allEditMode && !generating && testCases.length > 0 && (
+  <div className="bg-[#F0EFFD] border border-[#C4C2F4] rounded-xl px-4 py-3 mb-3 flex items-center gap-3">
+    <span className="text-[#4F46E5] text-[15px] flex-shrink-0">✦</span>
+    <div className="flex-1">
+      <div className="text-[13px] font-medium text-[#4F46E5]">
+        {testCases.length} test cases generated — review and edit before saving
+      </div>
+      <div className="text-[12px] text-[#6B64D0] mt-0.5">
+        All rows are open. Click Save all when done.
+      </div>
+    </div>
+    <button onClick={handleSaveAll} className="btn-p flex-shrink-0 text-[12px]">
+      Save all →
+    </button>
+  </div>
+)}
 ```
 
-### client/src/App.tsx
-Add new route for test cases page:
+---
+
+## Generating skeleton
+
+```tsx
+{generating && (
+  <div className="bg-white border border-[#EBEBEB] rounded-xl overflow-hidden">
+    <div className="px-4 py-3 bg-[#FAFAF8] border-b flex items-center gap-2">
+      <div className="w-3.5 h-3.5 border-2 border-[#EEEDF8] border-t-[#4F46E5] rounded-full animate-spin" />
+      <span className="text-[12.5px] text-[#4F46E5] font-medium animate-pulse">
+        Generating test cases with AI...
+      </span>
+    </div>
+    {[1, 2, 3].map(i => (
+      <div key={i} className="border-b last:border-b-0">
+        <div className="grid grid-cols-[30px_1fr_75px_90px_72px] p-3 gap-3">
+          <div className="h-3 w-3 rounded-full bg-[#F0F0ED] animate-pulse" />
+          <div className="h-3 rounded bg-[#F0F0ED] animate-pulse w-2/3" />
+          <div className="h-3 rounded bg-[#F0F0ED] animate-pulse w-10" />
+          <div className="h-3 rounded bg-[#F0F0ED] animate-pulse w-14" />
+          <div />
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+```
+
+---
+
+## CSS to add to index.css or component styles
+
+```css
+.tc-chev {
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #C0C0BC;
+  transition: transform 0.2s;
+  user-select: none;
+}
+.tc-chev.open {
+  transform: rotate(90deg);
+}
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 5px;
+}
+.field-textarea {
+  width: 100%;
+  border: 1px solid #DDDDD9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  resize: none;
+  min-height: 64px;
+  outline: none;
+  line-height: 1.6;
+}
+.field-textarea:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.07);
+}
+.step-input {
+  width: 100%;
+  border: 1px solid #DDDDD9;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  resize: none;
+  min-height: 52px;
+  outline: none;
+  line-height: 1.55;
+}
+.step-input:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.08);
+}
+.add-step-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1.5px dashed #D8D8D4;
+  background: transparent;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.add-step-btn:hover {
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+```
+
+---
+
+## App.tsx route
+
 ```typescript
 <Route
   path="/projects/:projectId/features/:featureId/testcases"
-  element={
-    <ProtectedRoute>
-      <TestCasesPage />
-    </ProtectedRoute>
-  }
+  element={<ProtectedRoute><TestCasesPage /></ProtectedRoute>}
 />
 ```
 
 ---
 
-### client/src/pages/TestCasesPage.tsx
-New page. Route: /projects/:projectId/features/:featureId/testcases
+## After building — test these flows
 
-This page is reached two ways:
-1. After adding a feature with generate ON — URL has ?generate=true
-2. By clicking a feature row in the features table
+### Flow A — Generate ON (all rows open in edit mode)
+1. Add a feature with Generate AI enabled
+2. Confirm redirect to test cases page
+3. Confirm AI review banner appears
+4. Confirm ALL rows are expanded showing Objective, Preconditions, Steps
+5. Confirm steps are split into Action | Test data | Expected result columns
+6. Edit a step action, test data, and expected result
+7. Edit the objective field
+8. Click Save all
+9. Confirm toast: "All test cases saved"
+10. Confirm rows collapse to read mode
 
-On mount behaviour:
-```typescript
-const { featureId, projectId } = useParams()
-const [searchParams] = useSearchParams()
-const shouldGenerate = searchParams.get('generate') === 'true'
+### Flow B — Normal browsing (click to expand)
+1. Click a feature row from the features table
+2. Confirm test cases table loads in read mode (all collapsed)
+3. Click a row chevron — confirm it expands showing all fields
+4. Edit objective textarea — confirm text updates
+5. Edit step 2 test data — confirm updates
+6. Add a new step — confirm new empty row appears
+7. Remove a step — confirm row disappears
+8. Click Save — confirm toast and row collapses
+9. Expand again — confirm saved values persist
 
-useEffect(() => {
-  if (shouldGenerate) {
-    // Trigger generation immediately, then clear the query param
-    generateTestCases(featureId!)
-    navigate(location.pathname, { replace: true })
-  } else {
-    fetchTestCases(featureId!)
-  }
-}, [featureId])
-```
-
-Layout: use Layout component
-
-Topbar:
-- Breadcrumb: Projects › {project name} › Features › {feature name}
-- Right side: Regenerate button (secondary) + Export CSV (secondary) + Add test case (primary)
-
-Feature info bar (below topbar, above table):
-- Feature name (bold, 14px)
-- Type badge (New Feature / Bug)
-- AI Generated pill with pulsing dot (only if testCases[0].generatedBy === 'LLM')
-- Count: "X test cases"
-- Project name + style (muted)
-
-Generating state (when shouldGenerate is true and generating is true in store):
-- Show a loading state in the table body: 3 skeleton rows with shimmer animation
-- Small "Generating test cases with AI..." label above the table
-
-Table columns:
-- Test Case (title + TC-xxx id below)
-- Priority (HIGH/MEDIUM/LOW badge)
-- Type (Positive/Negative/Edge Case badge)
-- Steps (first 3 steps shown, "+N more" link if more)
-- Expected Result (truncated at 100 chars)
-- Actions (Edit icon + Delete icon — always visible)
-
-#### Inline edit behaviour
-Clicking the Edit icon on a row:
-- Sets editingId state to that test case's id
-- The row renders all fields as inputs instead of text:
-  - Title → text input (full width)
-  - Priority → select dropdown
-  - Type → select dropdown
-  - Steps → textarea (newline separated)
-  - Expected Result → textarea
-- Show Save and Cancel buttons below the title input
-- Row gets a light blue background (#FAFAFE)
-- On Save: call testCaseStore.updateTestCase, clear editingId
-- On Cancel: clear editingId, no changes saved
-- Only one row can be edited at a time
-
-#### Inline delete behaviour
-Clicking the Delete icon on a row:
-- Sets deletingId state to that test case's id
-- That row is replaced by a single red-tinted confirmation row spanning all columns:
-  ⚠ Delete "{title}"? This cannot be undone.  [Yes, delete]  [Cancel]
-- On "Yes, delete": call testCaseStore.deleteTestCase, clear deletingId
-- On "Cancel": clear deletingId, row returns to normal
-
-#### Empty state (no test cases yet)
-Centered card:
-- Icon: ✓
-- Title: "No test cases yet"
-- Sub: "Generate them with AI or add them manually"
-- Two buttons: "✦ Generate with AI" (primary) and "Add manually" (secondary)
-
-#### Generating state
-While generateTestCases is in progress:
-- Show 3 skeleton rows in the table
-- Show label "✦ Generating test cases..." above table with pulsing animation
-
----
-
-## Priority and type badge colours
-
-| Value | Background | Text |
-|---|---|---|
-| HIGH | #FEF2F2 | #DC2626 |
-| MEDIUM | #FFFBEB | #B45309 |
-| LOW | #F5F5F3 | #888888 |
-| POSITIVE | #EFF6FF | #2563EB |
-| NEGATIVE | #FEF2F2 | #DC2626 |
-| EDGE_CASE | #F0FDF4 | #166534 |
-
----
-
-## After building all files
-
-Test this exact flow:
-
-### Flow A — Generate ON
-1. Go to /projects/:id/features
-2. Click ＋ Add Feature
-3. Fill in feature name and description
-4. Toggle Generate AI on — confirm box turns indigo, text changes
-5. Click Add Feature
-6. Confirm you land on /projects/:id/features/:fid/testcases
-7. Confirm skeleton loading rows appear briefly
-8. Confirm test cases appear in the table after generation
-9. Confirm AI Generated pill is visible in the feature bar
-10. Confirm breadcrumb shows correct path
-
-### Flow B — Generate OFF
-1. Click ＋ Add Feature
-2. Leave Generate AI toggle off
-3. Click Add Feature
-4. Confirm panel closes
-5. Confirm you stay on the features table
-6. Confirm green toast appears at top
-7. Confirm new feature row is highlighted with ✦ Generate button
-
-### Flow C — Generate from features table
-1. Find a feature row with 0 test cases
-2. Confirm ✦ Generate button is visible in Actions column
-3. Click it — confirm you land on the test cases page with generation starting
-
-### Flow D — Click feature row
-1. Click any feature row (not the action buttons)
-2. Confirm navigation to /projects/:id/features/:fid/testcases
-3. Confirm existing test cases load and display correctly
-
-### Flow E — Edit test case
-1. On the test cases page, click ✏ on any row
-2. Confirm row expands with editable inputs
-3. Change the title
-4. Click Save — confirm title updates in the table
-5. Click ✏ again, make a change, click Cancel — confirm nothing changed
-
-### Flow F — Delete test case
+### Flow C — Delete
 1. Click 🗑 on any row
-2. Confirm the row becomes a red confirmation row
-3. Click "Yes, delete" — confirm row disappears
-4. Click 🗑 on another row, click "Cancel" — confirm row returns to normal
+2. Confirm the row is replaced by a red confirmation row
+3. Click "Yes, delete" — confirm row disappears and toast shows
+4. Click 🗑 on another, click Cancel — confirm row returns to normal
 
-Open browser console after each flow — zero red errors.
+### Flow D — Sidebar collapse
+1. Click ◀ Collapse at the bottom of the sidebar
+2. Confirm sidebar shrinks to icon-only 48px
+3. Confirm test case table is noticeably wider
+4. Confirm state persists on page refresh (localStorage)
+5. Click again — confirm sidebar expands
 
-## Do not
-- Do not add any navigation or redirect text to the generate toggle
-- Do not change the Add Feature button label in any scenario
-- Do not modify any other pages
-- Fix all TypeScript errors before confirming done
-- Run migration SQL review before executing
+### Flow E — Empty state
+1. Navigate to a feature with no test cases
+2. Confirm empty state with Generate and Add manually buttons
+3. Click Generate — confirm generation starts
+
+Fix all TypeScript errors before confirming done.
+Do not modify any server files — only client files.
