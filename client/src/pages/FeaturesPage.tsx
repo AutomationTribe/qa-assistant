@@ -35,13 +35,20 @@ export default function FeaturesPage() {
   const [zephyrSetupOpen, setZephyrSetupOpen] = useState(false)
   const [templateFields, setTemplateFields] = useState<TestCaseField[]>([])
 
-  const { projects } = useProjectStore()
-  const { features, loading, fetchFeatures, deleteFeature } = useFeatureStore()
+  const { projects, fetchProjects } = useProjectStore()
+  const { features, loading, error: featuresError, fetchFeatures, deleteFeature } = useFeatureStore()
 
   const project = projects.find(p => p.id === projectId)
 
   useEffect(() => {
+    if (projects.length === 0) {
+      fetchProjects()
+    }
+  }, [fetchProjects, projects.length])
+
+  useEffect(() => {
     if (!projectId) return
+    console.log('Fetching features for project:', projectId)
     fetchFeatures(projectId, {
       search: search || undefined,
       dateFrom: dateFrom || undefined,
@@ -51,6 +58,10 @@ export default function FeaturesPage() {
   }, [projectId, search, dateFrom, dateTo, activeTab, fetchFeatures])
 
   // Fetch Zephyr connection and template fields on mount
+  useEffect(() => {
+    console.log('Features updated:', features.length, features)
+  }, [features])
+
   useEffect(() => {
     if (!projectId) return
 
@@ -177,13 +188,25 @@ export default function FeaturesPage() {
   return (
     <Layout title="Features" actions={actions}>
       {/* Breadcrumb */}
-      <div className="mb-6 text-sm text-[#999]">
-        <span>Projects</span>
+      <div className="mb-6 text-sm">
+        <button
+          onClick={() => navigate('/projects')}
+          className="text-[#4F46E5] hover:text-[#3730A3] font-medium transition-colors"
+        >
+          Projects
+        </button>
         <span className="mx-2 text-[#D0D0CC]">›</span>
         <span className="text-[#111] font-medium">{project?.name || 'Project'}</span>
         <span className="mx-2 text-[#D0D0CC]">›</span>
         <span className="text-[#111] font-medium">Features</span>
       </div>
+
+      {/* Error message */}
+      {featuresError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+          {featuresError}
+        </div>
+      )}
 
       {/* Search and filters with Add Feature button inline */}
       {!isEmpty && (
@@ -363,12 +386,18 @@ export default function FeaturesPage() {
                     <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
                       feature.type === 'NEW_FEATURE'
                         ? 'bg-[#EFF6FF] text-[#2563EB]'
+                        : feature.type === 'BACKEND_API'
+                        ? 'bg-[#F0FDF4] text-[#166534]'
                         : 'bg-[#FEF2F2] text-[#DC2626]'
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${
-                        feature.type === 'NEW_FEATURE' ? 'bg-[#2563EB]' : 'bg-[#DC2626]'
+                        feature.type === 'NEW_FEATURE'
+                          ? 'bg-[#2563EB]'
+                          : feature.type === 'BACKEND_API'
+                          ? 'bg-[#166534]'
+                          : 'bg-[#DC2626]'
                       }`} />
-                      {feature.type === 'NEW_FEATURE' ? 'New Feature' : 'Bug'}
+                      {feature.type === 'NEW_FEATURE' ? 'New Feature' : feature.type === 'BACKEND_API' ? 'Backend API' : 'Bug'}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-[#666]">{formatDate(feature.createdAt)}</td>

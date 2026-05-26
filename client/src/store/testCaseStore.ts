@@ -9,7 +9,7 @@ interface TestCaseStore {
   generating: boolean
   error: string | null
   fetchTestCases(featureId: string): Promise<void>
-  generateTestCases(featureId: string): Promise<{ testCases: TestCase[]; fields: TestCaseField[] }>
+  generateTestCases(featureId: string): Promise<{ testCases: TestCase[]; fields: TestCaseField[]; alreadyExisted: boolean }>
   updateTestCase(id: string, fieldValues: Record<string, any>): Promise<void>
   deleteTestCase(id: string): Promise<void>
   clearTestCases(): void
@@ -35,9 +35,9 @@ export const useTestCaseStore = create<TestCaseStore>((set) => ({
   generateTestCases: async (featureId) => {
     set({ generating: true, error: null })
     try {
-      const { testCases, fields } = await testCasesAPI.generateTestCases(featureId)
+      const { testCases, fields, alreadyExisted } = await testCasesAPI.generateTestCases(featureId)
       set({ testCases, fields, generating: false })
-      return { testCases, fields }
+      return { testCases, fields, alreadyExisted: alreadyExisted || false }
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message || 'Generation failed'
       set({ error: msg, generating: false })

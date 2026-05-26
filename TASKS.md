@@ -325,6 +325,80 @@
 
 ---
 
+## Fixes Applied
+
+✅ Fix 20 — Feature Form: Context Fields + Image Attachment
+   - Added 5 new optional fields to Feature model: acceptanceCriteria, uiNotes, testData, contextImages, and endpoints
+   - Changed description field from optional to required (min 10 chars)
+   - Client: AddFeaturePanel now shows these fields with appropriate UI
+   - Image upload: up to 3 images, 4MB each, base64 encoded
+   - Server: increased Express body limit to 20mb
+   - Migration: added fields to Feature model
+   - Fixed MySQL sort memory issue: added take: 1000 limit to listFeatures query
+
+✅ Fix 21 — Backend Feature Type + Multi-Endpoint Support
+   - Added BACKEND_API to FeatureType enum in schema.prisma
+   - Added endpoints field (Json) to Feature model
+   - Server: buildBackendTestCasePrompt function for API testing mode
+   - Server: generateTestCases now branches on feature type (BACKEND_API vs frontend)
+   - Client: visual 3-option type selector (Frontend, Backend API, Bug)
+   - Client: EndpointsSection component for managing multiple API endpoints
+   - Each endpoint can be: REST/GraphQL/WebSocket with method, path, request body, expected response, auth settings
+   - Conditional rendering: UI notes hidden for backend, endpoints section shown only for backend
+   - Features table: new green "Backend API" badge for backend features
+   - Validation: backend features require at least one endpoint path
+   - API generation: AI generates test cases tailored to API testing (with steps like "Send POST https://...")
+
+✅ Fix 22 — Project Name and Duplicate Test Cases on Refresh
+   - Bug 1: Project name now displays correctly in Add Feature panel (shows project.name, not ID)
+   - Bug 2: Eliminated duplicate test case generation on page refresh by:
+     * Clearing query param synchronously BEFORE async operations using setSearchParams({}, { replace: true })
+     * Added server-side guard in generateTestCases to check for existing test cases
+     * If test cases exist, returns them instead of generating new ones
+     * Added alreadyExisted flag to API response to signal if existing test cases were returned
+     * Client checks for existing test cases before triggering generation
+     * If test cases exist, loads them in edit mode without regeneration
+   - Server: testCaseService.ts includes guard logic that returns existing test cases if any found
+   - Server: testCaseController.ts returns alreadyExisted flag in response
+   - Client: TestCasesPage uses setSearchParams to synchronously clear ?generate=true param
+   - Client: handleGenerate shows appropriate toast message based on alreadyExisted flag
+   - Client: testCaseStore.ts returns alreadyExisted in generateTestCases method
+   - Client: testcases.ts API client returns alreadyExisted in response type
+   - Updated context/api-endpoints.md to document alreadyExisted field
+
+✅ Fix 23 — Race Condition Prevention for Duplicate Test Cases
+   - Issue: Duplicate test cases could be generated if two requests came in simultaneously and both passed the initial guard check
+   - Client-side: Added clearTestCases() at beginning of TestCasesPage effect to clear stale test case data when navigating to a new feature
+   - Server-side: Added re-check for existing test cases INSIDE the database transaction to catch race conditions where one request might have already created test cases while another was generating
+   - Server logic: If re-check finds test cases were created during generation, returns existing ones with alreadyExisted: true instead of creating duplicates
+   - Result: Prevents duplicate test case generation in all scenarios including simultaneous requests and quick page refreshes
+   - FeaturesPage: Added fetchProjects() call to ensure projects are loaded when navigating directly to features page
+
+✅ Fix 24 — MySQL Sort Buffer Overflow on Features List
+   - Issue: When clicking on a project, features list failed to load with "Out of sort memory" MySQL error (code 1038)
+   - Root cause: featureService.listFeatures was using database-level orderBy which required sorting in MySQL, causing memory overflow
+   - Server fix: Removed `orderBy: { createdAt: 'desc' }` from Prisma query and implemented sorting in JavaScript instead
+   - Server fix: Reduced take limit from 1000 to 500 to be safer with memory constraints
+   - Result: Features now load correctly without MySQL memory issues
+   - Side benefit: In-memory sorting is faster than database sorting for this dataset size
+   - Client-side: Added error display in FeaturesPage to show API errors to users
+   - Client-side: Added console logging for debugging features fetch operations
+
+✅ Fix 25 — Zephyr Export: Auto-close and Success Toast
+   - Issue: After exporting test cases to Zephyr with 100% success, modal stayed open and didn't refresh test cases with Zephyr keys
+   - Changes to client/src/components/ZephyrExportModal.tsx:
+     * Added onExported callback prop to component interface
+     * Modified handleExport to auto-close modal after 1.5 seconds when export fully succeeds (failCount === 0)
+     * Success toast now displays count correctly (singular/plural: "1 test case" vs "N test cases")
+     * Partial success (some failures) keeps modal open so user can see details
+   - Changes to client/src/pages/TestCasesPage.tsx:
+     * Added onExported callback that calls fetchTestCases to refresh test case list
+     * Callback ensures Zephyr key badges appear on rows after export
+     * Added setSelectMode(false) and setSelectedIds(new Set()) to onClose handler for cleanup
+   - Result: Modal auto-closes after successful export, test cases refresh showing Zephyr keys
+
+---
+
 ## Future — Phase 9+
 🔲 Jira webhook listener
 🔲 Zephyr Scale direct push integration

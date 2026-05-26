@@ -66,7 +66,8 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
 
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '20mb' }))
+app.use(express.urlencoded({ extended: true, limit: '20mb' }))
 app.use(cookieParser())
 
 // Rate limiter (disabled in development)

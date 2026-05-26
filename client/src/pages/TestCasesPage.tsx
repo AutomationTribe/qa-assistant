@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTestCaseStore } from '@/store/testCaseStore'
-import { useToastStore } from '@/store/toastStore'
+import { toast } from '@/store/toastStore'
 import { useProjectStore } from '@/store/projectStore'
 import { useFeatureStore } from '@/store/featureStore'
 import { TestCaseField, ZephyrConnection } from '@/types/api'
@@ -67,12 +67,11 @@ function getOtherFields(fields: TestCaseField[]): TestCaseField[] {
 
 export default function TestCasesPage() {
   const { projectId, featureId } = useParams<{ projectId: string; featureId: string }>()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const { testCases, fields, loading, generating, fetchTestCases, generateTestCases, updateTestCase, deleteTestCase } = useTestCaseStore()
-  const { success: showSuccess, error: showError } = useToastStore()
+  const { testCases, fields, loading, generating, fetchTestCases, generateTestCases, updateTestCase, deleteTestCase, clearTestCases } = useTestCaseStore()
   const { projects } = useProjectStore()
   const { features } = useFeatureStore()
 
@@ -86,14 +85,41 @@ export default function TestCasesPage() {
   const [zephyrConn, setZephyrConn] = useState<ZephyrConnection | null>(null)
   const [exportModalOpen, setExportModalOpen] = useState(false)
 
-  const shouldGenerate = searchParams.get('generate') === 'true'
-
   useEffect(() => {
     if (!featureId) return
 
+    // Clear previous feature's test cases when navigating to a new feature
+    clearTestCases()
+
+    const shouldGenerate = searchParams.get('generate') === 'true'
+
     if (shouldGenerate) {
-      navigate(location.pathname, { replace: true })
-      handleGenerate()
+      // Clear the query param IMMEDIATELY — synchronous, before any async call
+      // This means even if the user refreshes mid-generation, the param is gone
+      setSearchParams({}, { replace: true })
+
+      // Check if test cases already exist for this feature
+      // If they do, just load them — do not regenerate
+      fetchTestCases(featureId).then(() => {
+        // fetchTestCases updates the store — check count after
+        const existingCount = useTestCaseStore.getState().testCases.length
+        if (existingCount > 0) {
+          // Test cases already exist — show them in edit mode for review
+          // but do NOT generate new ones
+          setAllEditMode(true)
+          const init: Record<string, Record<string, any>> = {}
+          useTestCaseStore.getState().testCases.forEach(tc => {
+            init[tc.id] = { ...tc.fieldValues }
+          })
+          setDrafts(init)
+          const ids = new Set(useTestCaseStore.getState().testCases.map(tc => tc.id))
+          setExpandedIds(ids)
+        } else {
+          // No test cases yet — run generation
+          setAllEditMode(true)
+          handleGenerate()
+        }
+      })
     } else {
       fetchTestCases(featureId)
     }
@@ -120,11 +146,24 @@ export default function TestCasesPage() {
     if (!featureId) return
     setAllEditMode(true)
     try {
-      const { testCases: generated } = await generateTestCases(featureId)
-      showSuccess(`${generated.length} test cases generated — review and save`)
+      const { testCases: generated, alreadyExisted } = await generateTestCases(featureId)
+
+      if (alreadyExisted) {
+        toast.info('Test cases already generated — showing existing ones')
+      } else {
+        toast.success(`${generated.length} test cases generated — review and save`)
+      }
+
+      // Pre-populate drafts regardless
+      const init: Record<string, Record<string, any>> = {}
+      generated.forEach(tc => { init[tc.id] = { ...tc.fieldValues } })
+      setDrafts(init)
+      const ids = new Set(generated.map(tc => tc.id))
+      setExpandedIds(ids)
+
     } catch (err: any) {
       setAllEditMode(false)
-      showError(
+      toast.error(
         err?.response?.data?.error?.message || 'Generation failed. Please try again.'
       )
     }
@@ -527,13 +566,20 @@ export default function TestCasesPage() {
         {zephyrConn && (
           <ZephyrExportModal
             open={exportModalOpen}
-            onClose={() => setExportModalOpen(false)}
-            projectId={projectId!}
+            onClose={() => {
+              setExportModalOpen(false)
+              setSelectMode(false)
+              setSelectedIds(new Set())
+            }}
             featureId={featureId!}
             featureName={feature?.name || ''}
             testCases={testCases}
             fields={fields}
             jiraProjectKey={zephyrConn.jiraProjectKey}
+            projectId={projectId!}
+            onExported={() => {
+              fetchTestCases(featureId!)
+            }}
           />
         )}
       </div>

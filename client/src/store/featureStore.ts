@@ -12,7 +12,15 @@ interface FeatureStore {
     dateTo?: string
     status?: FeatureStatus
   }): Promise<void>
-  createFeature(projectId: string, data: { name: string; type: FeatureType; description?: string }): Promise<Feature>
+  createFeature(projectId: string, data: {
+    name: string
+    description: string
+    type: FeatureType
+    acceptanceCriteria?: string
+    uiNotes?: string
+    testData?: string
+    contextImages?: string[]
+  }): Promise<Feature>
   updateFeature(projectId: string, featureId: string, data: Partial<Feature>): Promise<void>
   deleteFeature(projectId: string, featureId: string): Promise<void>
 }

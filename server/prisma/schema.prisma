@@ -128,22 +128,28 @@ enum GeneratedBy {
 }
 
 model Feature {
-  id          String        @id @default(uuid())
-  name        String
-  description String?       @db.Text
-  type        FeatureType
-  status      FeatureStatus @default(DRAFT)
-  projectId   String
-  project     Project       @relation(fields: [projectId], references: [id])
-  testCases   TestCase[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
+  id                 String        @id @default(uuid())
+  name               String
+  description        String        @db.Text
+  acceptanceCriteria String?       @db.Text
+  uiNotes            String?       @db.Text
+  testData           String?       @db.Text
+  contextImages      Json?
+  endpoints          Json?
+  type               FeatureType
+  status             FeatureStatus @default(DRAFT)
+  projectId          String
+  project            Project       @relation(fields: [projectId], references: [id])
+  testCases          TestCase[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
 }
 
 enum FeatureType {
   NEW_FEATURE
   BUG
+  BACKEND_API
 }
 
 enum FeatureStatus {

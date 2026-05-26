@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { zephyrAPI } from '@/api/zephyr'
-import { useToastStore } from '@/store/toastStore'
+import { toast } from '@/store/toastStore'
 import { TestCase, TestCaseField, ZephyrConnection } from '@/types/api'
 
 interface ZephyrExportModalProps {
@@ -12,6 +12,7 @@ interface ZephyrExportModalProps {
   testCases: TestCase[]
   fields: TestCaseField[]
   jiraProjectKey: string
+  onExported?: () => void
 }
 
 type ExportStatus = 'pending' | 'exported' | 'failed'
@@ -31,6 +32,7 @@ export default function ZephyrExportModal({
   testCases,
   fields,
   jiraProjectKey,
+  onExported,
 }: ZephyrExportModalProps) {
   const [currentTab, setCurrentTab] = useState<'all' | 'selected'>('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -46,8 +48,6 @@ export default function ZephyrExportModal({
   const [selectedParentFolderId, setSelectedParentFolderId] = useState<
     number | null
   >(null)
-
-  const { success: showSuccess, error: showError } = useToastStore()
 
   useEffect(() => {
     if (!open || !projectId) return
@@ -149,18 +149,30 @@ export default function ZephyrExportModal({
       setExportComplete(true)
 
       if (result.failCount === 0) {
-        showSuccess(`✓ ${result.successCount} test cases exported to Zephyr Scale`)
-      } else {
-        showSuccess(
-          `${result.successCount} exported, ${result.failCount} failed`
+        // All succeeded — show toast then auto-close after 1.5 seconds
+        const count = result.successCount
+        toast.success(
+          count === 1
+            ? '1 test case exported to Zephyr Scale'
+            : `${count} test cases exported to Zephyr Scale`
         )
+        setTimeout(() => {
+          onClose()
+          if (onExported) onExported()
+        }, 1500)
+      } else if (result.successCount > 0) {
+        // Partial — stay open so user can see failures
+        toast.success(`${result.successCount} exported, ${result.failCount} failed — see details`)
+      } else {
+        // All failed — stay open
+        toast.error('Export failed — see details below')
       }
     } catch (err: any) {
       const msg =
         err?.response?.data?.error?.message ||
         err.message ||
         'Export failed'
-      showError(msg)
+      toast.error(msg)
       setExportComplete(true)
     } finally {
       setIsExporting(false)

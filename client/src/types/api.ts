@@ -49,13 +49,32 @@ export type TestCaseTemplate = {
   updatedAt: string
 }
 
-export type FeatureType = 'NEW_FEATURE' | 'BUG'
+export type FeatureType = 'NEW_FEATURE' | 'BUG' | 'BACKEND_API'
 export type FeatureStatus = 'DRAFT' | 'FINAL'
+
+export type ApiType = 'REST' | 'GRAPHQL' | 'WEBSOCKET'
+
+export type ApiEndpoint = {
+  id: string
+  apiType: ApiType
+  method: string
+  path: string
+  requestBody?: string
+  expectedResponse?: string
+  authRequired: boolean
+  authType?: 'Bearer' | 'API_Key' | 'Basic' | 'None'
+  notes?: string
+}
 
 export type Feature = {
   id: string
   name: string
-  description?: string
+  description: string
+  acceptanceCriteria?: string | null
+  uiNotes?: string | null
+  testData?: string | null
+  contextImages?: string[] | null
+  endpoints?: ApiEndpoint[] | null
   type: FeatureType
   status: FeatureStatus
   projectId: string

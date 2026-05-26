@@ -50,10 +50,15 @@ router.get('/', featureController.list)
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, type]
+ *             required: [name, type, description]
  *             properties:
  *               name: { type: string, minLength: 3, maxLength: 200 }
+ *               description: { type: string, minLength: 10, maxLength: 5000 }
  *               type: { type: string, enum: [NEW_FEATURE, BUG] }
+ *               acceptanceCriteria: { type: string }
+ *               uiNotes: { type: string }
+ *               testData: { type: string }
+ *               contextImages: { type: array, items: { type: string } }
  *     responses:
  *       201:
  *         description: Feature created
@@ -81,8 +86,13 @@ router.post('/', featureController.create)
  *             type: object
  *             properties:
  *               name: { type: string, minLength: 3, maxLength: 200 }
+ *               description: { type: string, minLength: 10, maxLength: 5000 }
  *               type: { type: string, enum: [NEW_FEATURE, BUG] }
  *               status: { type: string, enum: [DRAFT, FINAL] }
+ *               acceptanceCriteria: { type: string }
+ *               uiNotes: { type: string }
+ *               testData: { type: string }
+ *               contextImages: { type: array, items: { type: string } }
  *     responses:
  *       200:
  *         description: Feature updated

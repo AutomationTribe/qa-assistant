@@ -14,8 +14,8 @@ export const testCasesAPI = {
     return res.data
   },
 
-  async generateTestCases(featureId: string): Promise<TestCasesResponse & { count: number }> {
-    const res = await apiClient.post<TestCasesResponse & { count: number }>(
+  async generateTestCases(featureId: string): Promise<TestCasesResponse & { count: number; alreadyExisted: boolean }> {
+    const res = await apiClient.post<TestCasesResponse & { count: number; alreadyExisted: boolean }>(
       `/features/${featureId}/testcases/generate`
     )
     return res.data

@@ -27,7 +27,9 @@ export const featureService = {
     workspaceId: string,
     filters?: ListFilters
   ) {
+    console.log('listFeatures called:', { projectId, workspaceId })
     const project = await prisma.project.findUnique({ where: { id: projectId } })
+    console.log('Project found:', project?.id, project?.workspaceId)
     if (!project) throw new NotFoundError('Project not found')
     if (project.workspaceId !== workspaceId) throw new UnauthorizedError('Unauthorized')
 
@@ -57,8 +59,11 @@ export const featureService = {
     const features = await prisma.feature.findMany({
       where,
       include: { _count: { select: { testCases: true } } },
-      orderBy: { createdAt: 'desc' },
+      take: 500, // Reduced limit to prevent MySQL sort buffer overflow
     })
+
+    // Sort in memory instead of database to avoid sort buffer issues
+    features.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     if (!filters?.search) {
       return features
@@ -71,7 +76,16 @@ export const featureService = {
   async createFeature(
     projectId: string,
     workspaceId: string,
-    data: { name: string; type: 'NEW_FEATURE' | 'BUG'; description?: string }
+    data: {
+      name: string
+      description: string
+      type: 'NEW_FEATURE' | 'BUG' | 'BACKEND_API'
+      acceptanceCriteria?: string
+      uiNotes?: string
+      testData?: string
+      contextImages?: string[]
+      endpoints?: any[]
+    }
   ) {
     const project = await prisma.project.findUnique({ where: { id: projectId } })
     if (!project) throw new NotFoundError('Project not found')
@@ -80,7 +94,12 @@ export const featureService = {
     const feature = await prisma.feature.create({
       data: {
         name: data.name,
-        description: data.description || null,
+        description: data.description,
+        acceptanceCriteria: data.acceptanceCriteria || null,
+        uiNotes: data.uiNotes || null,
+        testData: data.testData || null,
+        contextImages: data.contextImages?.length ? data.contextImages : null,
+        endpoints: data.endpoints?.length ? data.endpoints : null,
         type: data.type,
         status: 'FINAL',
         projectId,
@@ -94,7 +113,17 @@ export const featureService = {
   async updateFeature(
     featureId: string,
     workspaceId: string,
-    data: { name?: string; type?: 'NEW_FEATURE' | 'BUG'; status?: 'DRAFT' | 'FINAL' }
+    data: {
+      name?: string
+      description?: string
+      type?: 'NEW_FEATURE' | 'BUG' | 'BACKEND_API'
+      status?: 'DRAFT' | 'FINAL'
+      acceptanceCriteria?: string
+      uiNotes?: string
+      testData?: string
+      contextImages?: string[]
+      endpoints?: any[]
+    }
   ) {
     const feature = await prisma.feature.findUnique({ where: { id: featureId } })
     if (!feature) throw new NotFoundError('Feature not found')
@@ -107,9 +136,15 @@ export const featureService = {
     const updated = await prisma.feature.update({
       where: { id: featureId },
       data: {
-        ...(data.name && { name: data.name }),
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
         ...(data.type && { type: data.type }),
         ...(data.status && { status: data.status }),
+        ...(data.acceptanceCriteria !== undefined && { acceptanceCriteria: data.acceptanceCriteria || null }),
+        ...(data.uiNotes !== undefined && { uiNotes: data.uiNotes || null }),
+        ...(data.testData !== undefined && { testData: data.testData || null }),
+        ...(data.contextImages !== undefined && { contextImages: data.contextImages?.length ? data.contextImages : null }),
+        ...(data.endpoints !== undefined && { endpoints: data.endpoints?.length ? data.endpoints : null }),
       },
       include: { _count: { select: { testCases: true } } },
     })

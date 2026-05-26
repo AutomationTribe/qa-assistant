@@ -488,17 +488,46 @@ Errors:
 ### POST /api/v1/projects/:projectId/features
 Create a new feature.
 
-Request body:
+Request body (frontend feature):
 ```json
 {
   "name": "User can log in with email and password",
   "type": "NEW_FEATURE",
-  "description": "User should be able to authenticate with email and password"
+  "description": "User should be able to authenticate with email and password",
+  "acceptanceCriteria": "Given a registered user, when they enter valid credentials...",
+  "uiNotes": "Login button, Email field label",
+  "testData": "user@test.com / Test@1234",
+  "contextImages": ["data:image/png;base64,..."]
 }
 ```
-type must be: "NEW_FEATURE" | "BUG"
+
+Request body (backend API feature):
+```json
+{
+  "name": "Login API endpoint",
+  "type": "BACKEND_API",
+  "description": "Endpoint for user authentication",
+  "acceptanceCriteria": "API should return access token and refresh token",
+  "testData": "Valid: user@test.com / Test@1234",
+  "endpoints": [
+    {
+      "id": "uuid",
+      "apiType": "REST",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "requestBody": "{ \"email\": \"user@test.com\", \"password\": \"Test@1234\" }",
+      "expectedResponse": "Status 200, body: { accessToken: string, refreshToken: string }",
+      "authRequired": false,
+      "notes": "Main login endpoint"
+    }
+  ]
+}
+```
+
+type must be: "NEW_FEATURE" | "BUG" | "BACKEND_API"
 name must be 3-200 characters
-description is optional, max 2000 characters
+description is required, min 10, max 5000 characters
+endpoints is required for BACKEND_API type, optional for others
 
 Response 201:
 ```json
@@ -510,6 +539,11 @@ Response 201:
     "type": "NEW_FEATURE",
     "status": "FINAL",
     "projectId": "uuid",
+    "acceptanceCriteria": "...",
+    "uiNotes": "...",
+    "testData": "...",
+    "contextImages": [...],
+    "endpoints": null,
     "createdAt": "2026-05-01T12:00:00.000Z",
     "updatedAt": "2026-05-01T12:00:00.000Z",
     "_count": {
@@ -524,6 +558,7 @@ Note: Manually created features have status "FINAL" by default. Features created
 Errors:
 - 404 NOT_FOUND — project does not exist or does not belong to workspace
 - 400 VALIDATION_ERROR — invalid input (name length, type enum)
+- 400 VALIDATION_ERROR — endpoints required for BACKEND_API features
 
 ---
 
@@ -534,8 +569,24 @@ Request body:
 ```json
 {
   "name": "Updated feature name",
-  "type": "BUG",
-  "status": "FINAL"
+  "description": "Updated description",
+  "type": "BACKEND_API",
+  "status": "FINAL",
+  "acceptanceCriteria": "Updated acceptance criteria",
+  "uiNotes": "Updated UI notes",
+  "testData": "Updated test data",
+  "endpoints": [
+    {
+      "id": "uuid",
+      "apiType": "REST",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "requestBody": "...",
+      "expectedResponse": "...",
+      "authRequired": true,
+      "authType": "Bearer"
+    }
+  ]
 }
 ```
 
@@ -545,9 +596,13 @@ Response 200:
   "feature": {
     "id": "uuid",
     "name": "Updated feature name",
-    "type": "BUG",
+    "description": "Updated description",
+    "type": "BACKEND_API",
     "status": "FINAL",
     "projectId": "uuid",
+    "acceptanceCriteria": "...",
+    "testData": "...",
+    "endpoints": [...],
     "updatedAt": "2026-05-01T13:00:00.000Z",
     "_count": {
       "testCases": 5
@@ -857,6 +912,7 @@ Errors:
 
 ### POST /api/v1/features/:featureId/testcases/generate
 Generate test cases for a feature using AI. Uses project's template fields as schema.
+If test cases already exist for this feature, returns existing ones instead of generating new ones.
 
 No request body needed.
 
@@ -889,9 +945,12 @@ Response 200:
       "order": 0
     }
   ],
-  "count": 5
+  "count": 5,
+  "alreadyExisted": false
 }
 ```
+
+Note: `alreadyExisted: true` if test cases already existed for this feature (generation was skipped).
 
 Errors:
 - 404 NOT_FOUND — feature does not exist or does not belong to workspace

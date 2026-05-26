@@ -17,7 +17,19 @@ export const featuresAPI = {
     return response.data.features
   },
 
-  async createFeature(projectId: string, data: { name: string; type: FeatureType; description?: string }): Promise<Feature> {
+  async createFeature(
+    projectId: string,
+    data: {
+      name: string
+      description: string
+      type: FeatureType
+      acceptanceCriteria?: string
+      uiNotes?: string
+      testData?: string
+      contextImages?: string[]
+      endpoints?: any[]
+    }
+  ): Promise<Feature> {
     const response = await apiClient.post<{ feature: Feature }>(
       `/projects/${projectId}/features`,
       data

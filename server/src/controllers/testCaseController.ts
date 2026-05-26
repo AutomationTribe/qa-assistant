@@ -22,11 +22,16 @@ export const testCaseController = {
   generate: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { featureId } = req.params
-      const { testCases, fields } = await testCaseService.generateTestCases(
+      const result = await testCaseService.generateTestCases(
         featureId,
         req.user!.workspaceId
       )
-      return res.json({ testCases, fields, count: testCases.length })
+      return res.json({
+        testCases: result.testCases,
+        fields: result.fields,
+        count: result.testCases.length,
+        alreadyExisted: result.alreadyExisted || false,
+      })
     } catch (error: any) {
       if (error.message?.startsWith('NO_TEMPLATE')) {
         return res.status(400).json({
