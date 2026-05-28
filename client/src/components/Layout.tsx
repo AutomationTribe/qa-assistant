@@ -28,6 +28,7 @@ export default function Layout({ title, actions, children }: LayoutProps) {
     } catch {
       // Even if the server call fails, clear local auth state
     } finally {
+      sessionStorage.removeItem('regi_session')
       clearAuth()
       navigate('/login')
     }

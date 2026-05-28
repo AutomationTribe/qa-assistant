@@ -52,6 +52,7 @@ export default function LoginPage() {
     try {
       const { accessToken, user } = await authAPI.login(data.email, data.password)
       setAuth(user, accessToken)
+      sessionStorage.setItem('regi_session', 'true')
       navigate('/projects', { replace: true })
     } catch (error) {
       const message =
@@ -70,6 +71,7 @@ export default function LoginPage() {
 
       const { accessToken, user } = await authAPI.login(data.email, data.password)
       setAuth(user, accessToken)
+      sessionStorage.setItem('regi_session', 'true')
       navigate('/projects', { replace: true })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Registration failed. Please try again.'

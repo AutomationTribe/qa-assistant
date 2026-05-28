@@ -16,11 +16,22 @@ export default function App() {
 
   useEffect(() => {
     const recoverSession = async () => {
+      // Only attempt refresh if we have evidence of a previous session
+      // Check for a flag in sessionStorage set when user logs in
+      const hadSession = sessionStorage.getItem('regi_session')
+
+      if (!hadSession) {
+        // No previous session — go straight to login, no API call
+        setChecking(false)
+        return
+      }
+
       try {
         const { accessToken, user } = await authAPI.refresh()
         setAuth(user, accessToken)
       } catch {
         clearAuth()
+        sessionStorage.removeItem('regi_session')
       } finally {
         setChecking(false)
       }

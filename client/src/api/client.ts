@@ -33,6 +33,7 @@ apiClient.interceptors.response.use(
       // Only attempt refresh if we actually have a user in the store
       const hasUser = !!useAuthStore.getState().user
       if (!hasUser) {
+        sessionStorage.removeItem('regi_session')
         useAuthStore.getState().clearAuth()
         return Promise.reject(error)
       }
@@ -60,6 +61,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest)
       } catch {
         refreshPromise = null
+        sessionStorage.removeItem('regi_session')
         useAuthStore.getState().clearAuth()
         return Promise.reject(error)
       }
