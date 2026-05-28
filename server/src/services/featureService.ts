@@ -77,8 +77,8 @@ export const featureService = {
     projectId: string,
     workspaceId: string,
     data: {
-      name: string
-      description: string
+      name?: string
+      description?: string
       type: 'NEW_FEATURE' | 'BUG' | 'BACKEND_API'
       acceptanceCriteria?: string
       uiNotes?: string
@@ -93,8 +93,8 @@ export const featureService = {
 
     const feature = await prisma.feature.create({
       data: {
-        name: data.name,
-        description: data.description,
+        name: data.name || '',
+        description: data.description || '',
         acceptanceCriteria: data.acceptanceCriteria || null,
         uiNotes: data.uiNotes || null,
         testData: data.testData || null,

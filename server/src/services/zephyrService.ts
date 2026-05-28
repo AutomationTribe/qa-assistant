@@ -314,7 +314,7 @@ export const zephyrService = {
 
     if (testCases.length === 0) {
       return {
-        results: [],
+        results: [] as Array<{ testCaseId: string; zephyrKey: string; success: boolean; error?: string }>,
         successCount: 0,
         failCount: 0,
         total: 0,

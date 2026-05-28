@@ -1,12 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { testCaseService } from '@/services/testCaseService'
 
-interface AuthRequest extends Request {
-  user?: { id: string; workspaceId: string }
-}
-
 export const testCaseController = {
-  list: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { featureId } = req.params
       const { testCases, fields } = await testCaseService.listTestCases(
@@ -19,7 +15,7 @@ export const testCaseController = {
     }
   },
 
-  generate: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  generate: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { featureId } = req.params
       const result = await testCaseService.generateTestCases(
@@ -42,7 +38,7 @@ export const testCaseController = {
     }
   },
 
-  update: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  update: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { testCaseId } = req.params
       const { fieldValues } = req.body
@@ -57,7 +53,7 @@ export const testCaseController = {
     }
   },
 
-  remove: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  remove: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { testCaseId } = req.params
       await testCaseService.deleteTestCase(testCaseId, req.user!.workspaceId)

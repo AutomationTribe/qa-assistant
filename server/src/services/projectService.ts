@@ -80,8 +80,8 @@ export const projectService = {
         description: description || null,
         baseUrl: baseUrl || null,
         workspaceId,
-        templateConfig,
-        logins: logins && logins.length > 0 ? logins : null,
+        templateConfig: templateConfig as any,
+        logins: logins && logins.length > 0 ? (logins as any) : null,
         template: {
           create: {},
         },
@@ -123,8 +123,8 @@ export const projectService = {
         ...(data.name && { name: data.name }),
         ...(data.description !== undefined && { description: data.description || null }),
         ...(data.baseUrl !== undefined && { baseUrl: data.baseUrl || null }),
-        ...(data.templateConfig && { templateConfig: data.templateConfig }),
-        ...(data.logins !== undefined && { logins: data.logins && data.logins.length > 0 ? data.logins : null }),
+        ...(data.templateConfig && { templateConfig: data.templateConfig as any }),
+        ...(data.logins !== undefined && { logins: data.logins && data.logins.length > 0 ? (data.logins as any) : null }),
       },
       select: {
         id: true,

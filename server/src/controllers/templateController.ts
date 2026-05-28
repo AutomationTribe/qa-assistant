@@ -1,12 +1,8 @@
 import { Request, Response } from 'express'
 import { templateService, TemplateError } from '@/services/templateService'
 
-interface AuthRequest extends Request {
-  user?: { id: string; workspaceId: string }
-}
-
 export const templateController = {
-  async getTemplate(req: AuthRequest, res: Response) {
+  async getTemplate(req: Request, res: Response) {
     try {
       const { projectId } = req.params
       const workspaceId = req.user!.workspaceId
@@ -26,7 +22,7 @@ export const templateController = {
     }
   },
 
-  async createTemplate(req: AuthRequest, res: Response) {
+  async createTemplate(req: Request, res: Response) {
     try {
       const { projectId } = req.params
       const { fields } = req.body
@@ -48,7 +44,7 @@ export const templateController = {
     }
   },
 
-  async updateTemplate(req: AuthRequest, res: Response) {
+  async updateTemplate(req: Request, res: Response) {
     try {
       const { projectId } = req.params
       const { fields } = req.body
@@ -78,7 +74,7 @@ export const templateController = {
     }
   },
 
-  async addField(req: AuthRequest, res: Response) {
+  async addField(req: Request, res: Response) {
     try {
       const { projectId } = req.params
       const { field } = req.body
@@ -108,7 +104,7 @@ export const templateController = {
     }
   },
 
-  async removeField(req: AuthRequest, res: Response) {
+  async removeField(req: Request, res: Response) {
     try {
       const { projectId, fieldId } = req.params
       const workspaceId = req.user!.workspaceId
@@ -137,7 +133,7 @@ export const templateController = {
     }
   },
 
-  async reorderFields(req: AuthRequest, res: Response) {
+  async reorderFields(req: Request, res: Response) {
     try {
       const { projectId } = req.params
       const { fieldIds } = req.body

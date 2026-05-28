@@ -1,0 +1,53 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Regi
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Verify client build
+        run: |
+          cd client
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: https://regi.intellotechnologies.com
+
+      - name: Verify server build
+        run: |
+          cd server
+          npm ci
+          npm run build
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /home/deploy/regi
+            bash deploy.sh
+
+      - name: Deployment complete
+        if: success()
+        run: echo "✅ Deployed to https://regi.intellotechnologies.com"

@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import { featureService } from '@/services/featureService'
 
-interface AuthRequest extends Request {
-  user?: { id: string; workspaceId: string }
-}
-
 const createSchema = z.object({
   name: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
@@ -50,28 +46,25 @@ const updateSchema = z.object({
 })
 
 export const featureController = {
-  async list(req: AuthRequest, res: Response, next: NextFunction) {
+  async list(req: Request, res: Response, next: NextFunction) {
     try {
       const { projectId } = req.params
       const { search, dateFrom, dateTo, status } = req.query
 
-      console.log('Fetching features for project:', projectId, 'user:', req.user?.id, 'workspace:', req.user?.workspaceId)
       const features = await featureService.listFeatures(projectId, req.user!.workspaceId, {
         search: search as string | undefined,
         dateFrom: dateFrom as string | undefined,
         dateTo: dateTo as string | undefined,
         status: status as 'DRAFT' | 'FINAL' | undefined,
       })
-      console.log('Found features:', features.length)
 
       res.json({ features })
     } catch (error) {
-      console.error('Features list error:', error)
       next(error)
     }
   },
 
-  async create(req: AuthRequest, res: Response, next: NextFunction) {
+  async create(req: Request, res: Response, next: NextFunction) {
     try {
       const { projectId } = req.params
       const data = createSchema.parse(req.body)
@@ -89,7 +82,7 @@ export const featureController = {
     }
   },
 
-  async update(req: AuthRequest, res: Response, next: NextFunction) {
+  async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { featureId } = req.params
       const data = updateSchema.parse(req.body)
@@ -107,7 +100,7 @@ export const featureController = {
     }
   },
 
-  async remove(req: AuthRequest, res: Response, next: NextFunction) {
+  async remove(req: Request, res: Response, next: NextFunction) {
     try {
       const { featureId } = req.params
       const result = await featureService.deleteFeature(featureId, req.user!.workspaceId)
