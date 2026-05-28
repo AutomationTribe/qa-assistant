@@ -27,6 +27,8 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { isAuthenticated, setAuth } = useAuthStore()
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin')
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false)
+  const [isSubmittingRegister, setIsSubmittingRegister] = useState(false)
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -45,6 +47,8 @@ export default function LoginPage() {
   }, [isAuthenticated, navigate])
 
   const onLoginSubmit = async (data: LoginFormData) => {
+    if (isSubmittingLogin) return
+    setIsSubmittingLogin(true)
     try {
       const { accessToken, user } = await authAPI.login(data.email, data.password)
       setAuth(user, accessToken)
@@ -53,10 +57,14 @@ export default function LoginPage() {
       const message =
         error instanceof Error ? error.message : 'Login failed. Please check your credentials.'
       loginForm.setError('email', { message })
+    } finally {
+      setIsSubmittingLogin(false)
     }
   }
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
+    if (isSubmittingRegister) return
+    setIsSubmittingRegister(true)
     try {
       await authAPI.register(data.email, data.name, data.password, data.workspaceName)
 
@@ -66,6 +74,8 @@ export default function LoginPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Registration failed. Please try again.'
       registerForm.setError('email', { message })
+    } finally {
+      setIsSubmittingRegister(false)
     }
   }
 
