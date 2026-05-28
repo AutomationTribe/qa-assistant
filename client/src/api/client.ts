@@ -21,7 +21,14 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't retry on rate limit errors
+    if (error.response?.status === 429) {
+      useAuthStore.getState().clearAuth()
+      return Promise.reject(error)
+    }
+
+    // Only retry other 401 errors (not any auth endpoint itself)
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
       originalRequest._retry = true
 
       try {
@@ -50,7 +57,6 @@ apiClient.interceptors.response.use(
       } catch {
         refreshPromise = null
         useAuthStore.getState().clearAuth()
-        window.location.href = '/login'
         return Promise.reject(error)
       }
     }
