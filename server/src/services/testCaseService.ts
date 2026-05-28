@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { TestCase } from '@prisma/client'
 import OpenAI from 'openai'
-import { buildTestCaseGenerationPrompt, buildBackendTestCasePrompt, ApiEndpoint } from './services/llm/prompts'
+import { buildTestCaseGenerationPrompt, buildBackendTestCasePrompt, ApiEndpoint } from '../services/llm/prompts'
 import { NotFoundError, UnauthorizedError } from '../lib/errors'
 
 export const testCaseService = {
