@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
-import { projectService, ProjectError } from '@/services/projectService'
+import { projectService, ProjectError } from '../services/projectService'
 
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required'),

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
-import { authService, AuthError } from '@/services/authService'
+import { authService, AuthError } from '../services/authService'
 
 // Validation schemas
 const registerSchema = z.object({

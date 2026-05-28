@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import logger from '@/lib/logger'
+import logger from '../lib/logger'
 
 export interface AuthPayload {
   id: string

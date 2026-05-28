@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '../lib/prisma'
 import { TestCase } from '@prisma/client'
 import OpenAI from 'openai'
-import { buildTestCaseGenerationPrompt, buildBackendTestCasePrompt, ApiEndpoint } from '@/services/llm/prompts'
-import { NotFoundError, UnauthorizedError } from '@/lib/errors'
+import { buildTestCaseGenerationPrompt, buildBackendTestCasePrompt, ApiEndpoint } from '../services/llm/prompts'
+import { NotFoundError, UnauthorizedError } from '../lib/errors'
 
 export const testCaseService = {
   async listTestCases(featureId: string, workspaceId: string) {

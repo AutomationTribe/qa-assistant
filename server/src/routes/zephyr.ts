@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { authenticate } from '@/middleware/auth'
-import { zephyrController } from '@/controllers/zephyrController'
+import { authenticate } from '../middleware/auth'
+import { zephyrController } from '../controllers/zephyrController'
 
 const router = Router({ mergeParams: true })
 router.use(authenticate)
