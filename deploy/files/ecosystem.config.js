@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'regi-server',
-      script: './server/dist/index.js',
+      script: './qa-assistant/server/dist/index.js',
       cwd: '/home/deploy/regi',
       instances: 1,
       autorestart: true,
