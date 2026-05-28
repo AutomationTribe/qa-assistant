@@ -39,6 +39,20 @@ context/phase-6-llm-generation.md
 ## Architecture notes
 Read context/architecture.md to understand why key decisions were made.
 
+## Git workflow
+**All development happens on the `develop` branch. Main branch is for production releases only.**
+
+1. Always work on `develop` branch — never commit directly to `main`
+2. Make changes, test locally, then commit to `develop`
+3. When changes are complete and tested:
+   - Create a pull request from `develop` to `main`
+   - Include a summary of changes in the PR description
+   - Wait for review/approval before merging
+4. After PR is merged to `main`:
+   - SSH to production server and pull latest code
+   - Run build and deployment steps
+   - Verify in production
+
 ## Folder rules
 - client/ code only touches client/ files
 - server/ code only touches server/ files
