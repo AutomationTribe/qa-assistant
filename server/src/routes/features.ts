@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { featureController } from './controllers/featureController'
-import { authenticate } from './middleware/auth'
+import { featureController } from '../controllers/featureController'
+import { authenticate } from '../middleware/auth'
 
 const router = Router({ mergeParams: true })
 

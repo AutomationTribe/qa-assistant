@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { zephyrService } from './services/zephyrService'
+import { zephyrService } from '../services/zephyrService'
 
 export const zephyrController = {
 

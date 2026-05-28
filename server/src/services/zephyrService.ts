@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { prisma } from './lib/prisma'
-import { encrypt, decrypt } from './lib/encryption'
-import { NotFoundError, UnauthorizedError } from './lib/errors'
+import { prisma } from '../lib/prisma'
+import { encrypt, decrypt } from '../lib/encryption'
+import { NotFoundError, UnauthorizedError } from '../lib/errors'
 
 const ZEPHYR_BASE = 'https://api.zephyrscale.smartbear.com/v2'
 

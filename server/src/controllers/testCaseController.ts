@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { testCaseService } from './services/testCaseService'
+import { testCaseService } from '../services/testCaseService'
 
 export const testCaseController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
