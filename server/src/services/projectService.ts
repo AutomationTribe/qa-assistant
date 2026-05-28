@@ -59,7 +59,7 @@ export const projectService = {
     return projects
   },
 
-  async createProject(workspaceId: string, data: CreateProjectPayload) {
+  async createProject(workspaceId: string, data: any) {
     const { name, description, baseUrl, templateConfig, logins } = data
 
     const existingProject = await prisma.project.findFirst({
@@ -104,7 +104,7 @@ export const projectService = {
     return project
   },
 
-  async updateProject(projectId: string, workspaceId: string, data: UpdateProjectPayload) {
+  async updateProject(projectId: string, workspaceId: string, data: any) {
     const project = await prisma.project.findUnique({
       where: { id: projectId },
     })
