@@ -27,13 +27,17 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/')
+    ) {
       originalRequest._retry = true
 
       // Only attempt refresh if we actually have a user in the store
       const hasUser = !!useAuthStore.getState().user
       if (!hasUser) {
-        sessionStorage.removeItem('regi_session')
+        localStorage.removeItem('regi_had_session')
         useAuthStore.getState().clearAuth()
         return Promise.reject(error)
       }
@@ -61,7 +65,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest)
       } catch {
         refreshPromise = null
-        sessionStorage.removeItem('regi_session')
+        localStorage.removeItem('regi_had_session')
         useAuthStore.getState().clearAuth()
         return Promise.reject(error)
       }

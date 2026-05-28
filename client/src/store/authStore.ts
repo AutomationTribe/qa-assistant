@@ -15,6 +15,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   setAuth: (user: AuthUser, accessToken: string) => {
+    localStorage.setItem('regi_had_session', 'true')
     set({
       user,
       accessToken,
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearAuth: () => {
+    localStorage.removeItem('regi_had_session')
     set({
       user: null,
       accessToken: null,
