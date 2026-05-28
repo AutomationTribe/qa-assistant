@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { templateService, TemplateError } from '../services/templateService'
+import { templateService, TemplateError } from './services/templateService'
 
 export const templateController = {
   async getTemplate(req: Request, res: Response) {

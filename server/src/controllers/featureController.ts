@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
-import { featureService } from '../services/featureService'
+import { featureService } from './services/featureService'
 
 const createSchema = z.object({
   name: z.string().min(3).max(200),

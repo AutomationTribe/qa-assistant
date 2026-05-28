@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { testCaseController } from '../controllers/testCaseController'
-import { authenticate } from '../middleware/auth'
+import { testCaseController } from './controllers/testCaseController'
+import { authenticate } from './middleware/auth'
 
 const router = Router({ mergeParams: true })
 

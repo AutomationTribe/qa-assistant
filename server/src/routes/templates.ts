@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { authenticate } from '../middleware/auth'
-import { templateController } from '../controllers/templateController'
+import { authenticate } from './middleware/auth'
+import { templateController } from './controllers/templateController'
 
 const router = Router({ mergeParams: true })
 
