@@ -1,5 +1,5 @@
 import apiClient from './client'
-import { Feature, FeatureType, FeatureStatus } from '@/types/api'
+import { Feature, FeatureType, FeatureStatus, ApiEndpoint } from '@/types/api'
 
 interface ListFeaturesParams {
   search?: string
@@ -27,7 +27,7 @@ export const featuresAPI = {
       uiNotes?: string
       testData?: string
       contextImages?: string[]
-      endpoints?: any[]
+      endpoints?: ApiEndpoint[]
     }
   ): Promise<Feature> {
     const response = await apiClient.post<{ feature: Feature }>(

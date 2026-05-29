@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { zephyrAPI } from '@/api/zephyr'
-import { useToastStore } from '@/store/toastStore'
+import { toast } from '@/store/toastStore'
 import { TestCaseField, ZephyrConnection, ZephyrFieldMapping } from '@/types/api'
 import SlidePanel from '@/components/ui/SlidePanel'
 
@@ -31,8 +31,6 @@ export default function ZephyrSetupPanel({
   })
   const [error, setError] = useState<string | null>(null)
   const [isTesting, setIsTesting] = useState(false)
-
-  const { success: showSuccess, error: showError } = useToastStore()
 
   const defaults = useMemo(() => {
     const defaults: Partial<ZephyrFieldMapping> = {}
@@ -106,7 +104,7 @@ export default function ZephyrSetupPanel({
         fieldMapping,
       })
       console.log('✓ Zephyr connection saved:', conn)
-      showSuccess('Zephyr Scale connected')
+      toast.success('Zephyr Scale connected')
       setApiToken('')
       setJiraProjectKey('')
       setFieldMapping({ name: '', steps: '' })

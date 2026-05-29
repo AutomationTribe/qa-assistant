@@ -5,7 +5,7 @@ import Layout from '@/components/Layout'
 import CreateProjectModal from '@/components/CreateProjectModal'
 import Button from '@/components/ui/Button'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import { useToastStore } from '@/store/toastStore'
+import { toast } from '@/store/toastStore'
 import type { Project } from '@/types/api'
 
 const STYLE_EMOJI: Record<string, string> = {
@@ -34,7 +34,6 @@ export default function ProjectsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const { projects, loading, error, fetchProjects, selectProject, deleteProject } = useProjectStore()
-  const { success: showSuccess, error: showError } = useToastStore()
 
   useEffect(() => {
     fetchProjects()
@@ -61,9 +60,9 @@ export default function ProjectsPage() {
       await deleteProject(projectToDelete.id)
       setDeleteConfirmOpen(false)
       setProjectToDelete(null)
-      showSuccess(`Project "${projectToDelete.name}" deleted`)
+      toast.success(`Project "${projectToDelete.name}" deleted`)
     } catch {
-      showError('Failed to delete project')
+      toast.error('Failed to delete project')
     } finally {
       setIsDeleting(false)
     }

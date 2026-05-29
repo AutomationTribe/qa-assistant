@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Feature, FeatureType, FeatureStatus } from '@/types/api'
+import { Feature, FeatureType, FeatureStatus, ApiEndpoint } from '@/types/api'
 import { featuresAPI } from '@/api/features'
 
 interface FeatureStore {
@@ -20,6 +20,7 @@ interface FeatureStore {
     uiNotes?: string
     testData?: string
     contextImages?: string[]
+    endpoints?: ApiEndpoint[]
   }): Promise<Feature>
   updateFeature(projectId: string, featureId: string, data: Partial<Feature>): Promise<void>
   deleteFeature(projectId: string, featureId: string): Promise<void>

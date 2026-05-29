@@ -34,10 +34,15 @@ export default function Layout({ title, actions, children }: LayoutProps) {
     }
   }
 
-  const initials = user ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase() : 'U'
-  const roleLabel = user?.role.replace(/_/g, ' ').toLowerCase() || 'User'
+  type NavItem = {
+    icon: string
+    label: string
+    path: string
+    active?: boolean
+    badge?: string
+  }
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { icon: '▣', label: 'Projects', path: '/projects', active: true },
     { icon: '🎫', label: 'Tickets', path: '/tickets', badge: 'soon' },
     { icon: '✓', label: 'Test Cases', path: '/testcases', badge: 'soon' },
