@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { useAuthStore } from '@/store/authStore'
 import { authAPI } from '@/api/auth'
 import Input from '@/components/ui/Input'
-import PasswordInput from '@/components/ui/PasswordInput'
 import Button from '@/components/ui/Button'
 
 const loginSchema = z.object({
@@ -30,6 +29,8 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin')
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false)
   const [isSubmittingRegister, setIsSubmittingRegister] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showSignupPassword, setShowSignupPassword] = useState(false)
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -147,12 +148,49 @@ export default function LoginPage() {
                   {...loginForm.register('email')}
                   error={loginForm.formState.errors.email?.message}
                 />
-                <PasswordInput
-                  label="Password"
-                  placeholder="••••••••"
-                  {...loginForm.register('password')}
-                  error={loginForm.formState.errors.password?.message}
-                />
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-medium text-[#333]">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      {...loginForm.register('password')}
+                      className={[
+                        'w-full border rounded-lg px-3 py-2 text-[13px] text-[#111] pr-10',
+                        'bg-[#FAFAF8] font-sans outline-none transition-all',
+                        'placeholder:text-[#C8C8C4]',
+                        loginForm.formState.errors.password?.message
+                          ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/10'
+                          : 'border-[#DDDDD9] focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#555] cursor-pointer"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                          <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {loginForm.formState.errors.password?.message && (
+                    <span className="text-[11px] text-red-500">{loginForm.formState.errors.password.message}</span>
+                  )}
+                </div>
               </div>
               <Button fullWidth loading={loginForm.formState.isSubmitting}>
                 Sign in →
@@ -184,13 +222,50 @@ export default function LoginPage() {
                   {...registerForm.register('email')}
                   error={registerForm.formState.errors.email?.message}
                 />
-                <PasswordInput
-                  label="Password"
-                  placeholder="••••••••"
-                  hint="Use at least 8 characters"
-                  {...registerForm.register('password')}
-                  error={registerForm.formState.errors.password?.message}
-                />
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-medium text-[#333]">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showSignupPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      {...registerForm.register('password')}
+                      className={[
+                        'w-full border rounded-lg px-3 py-2 text-[13px] text-[#111] pr-10',
+                        'bg-[#FAFAF8] font-sans outline-none transition-all',
+                        'placeholder:text-[#C8C8C4]',
+                        registerForm.formState.errors.password?.message
+                          ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/10'
+                          : 'border-[#DDDDD9] focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#555] cursor-pointer"
+                      aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showSignupPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                          <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-[#aaa]">Use at least 8 characters</span>
+                  {registerForm.formState.errors.password?.message && (
+                    <span className="text-[11px] text-red-500">{registerForm.formState.errors.password.message}</span>
+                  )}
+                </div>
                 <Input
                   type="text"
                   label="Workspace name"
