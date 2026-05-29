@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useAuthStore } from '@/store/authStore'
 import { authAPI } from '@/api/auth'
 import Input from '@/components/ui/Input'
+import PasswordInput from '@/components/ui/PasswordInput'
 import Button from '@/components/ui/Button'
 
 const loginSchema = z.object({
@@ -146,8 +147,7 @@ export default function LoginPage() {
                   {...loginForm.register('email')}
                   error={loginForm.formState.errors.email?.message}
                 />
-                <Input
-                  type="password"
+                <PasswordInput
                   label="Password"
                   placeholder="••••••••"
                   {...loginForm.register('password')}
@@ -184,8 +184,7 @@ export default function LoginPage() {
                   {...registerForm.register('email')}
                   error={registerForm.formState.errors.email?.message}
                 />
-                <Input
-                  type="password"
+                <PasswordInput
                   label="Password"
                   placeholder="••••••••"
                   hint="Use at least 8 characters"
