@@ -5,9 +5,9 @@ import { projectService, ProjectError } from '../services/projectService'
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
   description: z.string().optional(),
-  baseUrl: z.string().url().optional().or(z.literal('')),
+  baseUrl: z.string().optional().or(z.literal('')),
   templateConfig: z.object({
-    style: z.enum(['bdd', 'step_by_step', 'exploratory']),
+    style: z.enum(['waterfall', 'agile_scrum', 'agile_kanban']),
   }),
   logins: z
     .array(
@@ -23,7 +23,7 @@ const createProjectSchema = z.object({
 const updateProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').optional(),
   templateConfig: z.object({
-    style: z.enum(['bdd', 'step_by_step', 'exploratory']),
+    style: z.enum(['waterfall', 'agile_scrum', 'agile_kanban']),
   }).optional(),
 })
 
