@@ -15,12 +15,18 @@ export default function App() {
     const [checking, setChecking] = useState(true);
     useEffect(() => {
         const recoverSession = async () => {
+            const hadSession = localStorage.getItem('regi_had_session');
+            if (!hadSession) {
+                setChecking(false);
+                return;
+            }
             try {
                 const { accessToken, user } = await authAPI.refresh();
                 setAuth(user, accessToken);
             }
             catch {
                 clearAuth();
+                localStorage.removeItem('regi_had_session');
             }
             finally {
                 setChecking(false);

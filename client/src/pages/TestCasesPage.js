@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTestCaseStore } from '@/store/testCaseStore';
 import { toast } from '@/store/toastStore';
 import { useProjectStore } from '@/store/projectStore';
@@ -53,7 +53,6 @@ export default function TestCasesPage() {
     const { projectId, featureId } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const location = useLocation();
     const { testCases, fields, loading, generating, fetchTestCases, generateTestCases, updateTestCase, deleteTestCase, clearTestCases } = useTestCaseStore();
     const { projects } = useProjectStore();
     const { features } = useFeatureStore();
@@ -204,10 +203,10 @@ export default function TestCasesPage() {
             setAllEditMode(false);
             setExpandedIds(new Set());
             setDrafts({});
-            showSuccess('All test cases saved');
+            toast.success('All test cases saved');
         }
         catch {
-            showError('Failed to save some test cases. Please try again.');
+            toast.error('Failed to save some test cases. Please try again.');
         }
     };
     const handleSaveOne = async (id) => {
@@ -222,20 +221,20 @@ export default function TestCasesPage() {
             const next = { ...drafts };
             delete next[id];
             setDrafts(next);
-            showSuccess('Test case saved');
+            toast.success('Test case saved');
         }
         catch {
-            showError('Failed to save test case');
+            toast.error('Failed to save test case');
         }
     };
     const handleDelete = async (id) => {
         try {
             await deleteTestCase(id);
             setDeletingId(null);
-            showSuccess('Test case deleted');
+            toast.success('Test case deleted');
         }
         catch {
-            showError('Failed to delete test case');
+            toast.error('Failed to delete test case');
         }
     };
     const actions = (_jsxs("div", { className: "flex items-center gap-2", children: [allEditMode && testCases.length > 0 && (_jsx("button", { onClick: handleSaveAll, className: "bg-[#059669] hover:bg-[#047857] text-white border-none rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer font-sans flex items-center gap-1.5", children: "\u2713 Save all" })), testCases.length > 0 && (_jsx("button", { onClick: handleGenerate, className: "flex items-center gap-1.5 bg-white text-[#111] border border-[#D8D8D4] rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#FAFAF8] transition-colors", children: "\u2726 Regenerate" })), zephyrConn ? (_jsx("button", { onClick: () => setExportModalOpen(true), className: "flex items-center gap-1.5 bg-white text-[#111] border border-[#D8D8D4] rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#FAFAF8] transition-colors", children: "\u2197 Export to Zephyr" })) : (_jsx("button", { onClick: () => navigate(`/projects/${projectId}/template`), className: "flex items-center gap-1.5 bg-white text-[#888] border border-[#D8D8D4] rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer", children: "\u2699 Connect Zephyr" })), _jsx("button", { className: "flex items-center gap-1.5 bg-[#4F46E5] text-white border-none rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#4338CA] transition-colors", children: "\uFF0B Add test case" })] }));
@@ -254,8 +253,6 @@ export default function TestCasesPage() {
                                                         }, className: "btn-s text-[11.5px]", children: "Cancel" })] }))] }))] }, tc.id));
                         })] })), zephyrConn && (_jsx(ZephyrExportModal, { open: exportModalOpen, onClose: () => {
                         setExportModalOpen(false);
-                        setSelectMode(false);
-                        setSelectedIds(new Set());
                     }, featureId: featureId, featureName: feature?.name || '', testCases: testCases, fields: fields, jiraProjectKey: zephyrConn.jiraProjectKey, projectId: projectId, onExported: () => {
                         fetchTestCases(featureId);
                     } }))] }) }));

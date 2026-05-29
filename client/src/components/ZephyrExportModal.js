@@ -36,23 +36,12 @@ export default function ZephyrExportModal({ open, onClose, projectId, featureId,
     // Count new (not yet exported) vs already exported
     const newCases = testCases.filter(tc => !tc.zephyrKey);
     const exportedCases = testCases.filter(tc => tc.zephyrKey);
-    const newCountToExport = useMemo(() => {
-        if (currentTab === 'all') {
-            return newCases.length;
-        }
-        return Array.from(selectedIds).filter(id => {
-            const tc = testCases.find(t => t.id === id);
-            return tc && !tc.zephyrKey;
-        }).length;
-    }, [currentTab, selectedIds, testCases, newCases]);
     const selectedCountAll = useMemo(() => {
         return Array.from(selectedIds).filter(id => {
             const tc = testCases.find(t => t.id === id);
             return tc && !tc.zephyrKey;
         }).length;
     }, [selectedIds, testCases]);
-    // Scroll test case list when exporting
-    const [scrollIntoView, setScrollIntoView] = useState(null);
     const handleSelectAll = () => {
         const newIds = new Set(newCases.map(tc => tc.id));
         setSelectedIds(newIds);

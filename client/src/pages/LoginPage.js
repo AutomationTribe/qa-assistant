@@ -44,6 +44,7 @@ export default function LoginPage() {
         try {
             const { accessToken, user } = await authAPI.login(data.email, data.password);
             setAuth(user, accessToken);
+            sessionStorage.setItem('regi_session', 'true');
             navigate('/projects', { replace: true });
         }
         catch (error) {
@@ -62,6 +63,7 @@ export default function LoginPage() {
             await authAPI.register(data.email, data.name, data.password, data.workspaceName);
             const { accessToken, user } = await authAPI.login(data.email, data.password);
             setAuth(user, accessToken);
+            sessionStorage.setItem('regi_session', 'true');
             navigate('/projects', { replace: true });
         }
         catch (error) {

@@ -14,16 +14,23 @@ apiClient.interceptors.request.use((config) => {
 });
 apiClient.interceptors.response.use((response) => response, async (error) => {
     const originalRequest = error.config;
-    // Don't retry on rate limit errors
-    if (error.response?.status === 429) {
-        useAuthStore.getState().clearAuth();
+    // Never intercept auth endpoints — avoids refresh loops
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+    if (isAuthEndpoint) {
         return Promise.reject(error);
     }
-    // Only retry other 401 errors (not any auth endpoint itself)
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+    if (error.response?.status === 401 &&
+        !originalRequest._retry &&
+        !originalRequest.url?.includes('/auth/')) {
         originalRequest._retry = true;
+        // Only attempt refresh if we actually have a user in the store
+        const hasUser = !!useAuthStore.getState().user;
+        if (!hasUser) {
+            localStorage.removeItem('regi_had_session');
+            useAuthStore.getState().clearAuth();
+            return Promise.reject(error);
+        }
         try {
-            // Prevent multiple simultaneous refresh requests
             if (!refreshPromise) {
                 refreshPromise = (async () => {
                     const response = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true });
@@ -42,6 +49,7 @@ apiClient.interceptors.response.use((response) => response, async (error) => {
         }
         catch {
             refreshPromise = null;
+            localStorage.removeItem('regi_had_session');
             useAuthStore.getState().clearAuth();
             return Promise.reject(error);
         }
