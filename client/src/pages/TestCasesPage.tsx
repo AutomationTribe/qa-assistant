@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTestCaseStore } from '@/store/testCaseStore'
 import { toast } from '@/store/toastStore'
 import { useProjectStore } from '@/store/projectStore'
@@ -69,7 +69,6 @@ export default function TestCasesPage() {
   const { projectId, featureId } = useParams<{ projectId: string; featureId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const { testCases, fields, loading, generating, fetchTestCases, generateTestCases, updateTestCase, deleteTestCase, clearTestCases } = useTestCaseStore()
   const { projects } = useProjectStore()
@@ -234,9 +233,9 @@ export default function TestCasesPage() {
       setAllEditMode(false)
       setExpandedIds(new Set())
       setDrafts({})
-      showSuccess('All test cases saved')
+      toast.success('All test cases saved')
     } catch {
-      showError('Failed to save some test cases. Please try again.')
+      toast.error('Failed to save some test cases. Please try again.')
     }
   }
 
@@ -252,9 +251,9 @@ export default function TestCasesPage() {
       const next = { ...drafts }
       delete next[id]
       setDrafts(next)
-      showSuccess('Test case saved')
+      toast.success('Test case saved')
     } catch {
-      showError('Failed to save test case')
+      toast.error('Failed to save test case')
     }
   }
 
@@ -262,9 +261,9 @@ export default function TestCasesPage() {
     try {
       await deleteTestCase(id)
       setDeletingId(null)
-      showSuccess('Test case deleted')
+      toast.success('Test case deleted')
     } catch {
-      showError('Failed to delete test case')
+      toast.error('Failed to delete test case')
     }
   }
 
@@ -568,8 +567,6 @@ export default function TestCasesPage() {
             open={exportModalOpen}
             onClose={() => {
               setExportModalOpen(false)
-              setSelectMode(false)
-              setSelectedIds(new Set())
             }}
             featureId={featureId!}
             featureName={feature?.name || ''}

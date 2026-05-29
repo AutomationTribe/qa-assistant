@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { zephyrAPI } from '@/api/zephyr'
 import { toast } from '@/store/toastStore'
-import { TestCase, TestCaseField, ZephyrConnection } from '@/types/api'
+import { TestCase, TestCaseField } from '@/types/api'
 
 interface ZephyrExportModalProps {
   open: boolean
@@ -77,25 +77,12 @@ export default function ZephyrExportModal({
   const newCases = testCases.filter(tc => !tc.zephyrKey)
   const exportedCases = testCases.filter(tc => tc.zephyrKey)
 
-  const newCountToExport = useMemo(() => {
-    if (currentTab === 'all') {
-      return newCases.length
-    }
-    return Array.from(selectedIds).filter(id => {
-      const tc = testCases.find(t => t.id === id)
-      return tc && !tc.zephyrKey
-    }).length
-  }, [currentTab, selectedIds, testCases, newCases])
-
   const selectedCountAll = useMemo(() => {
     return Array.from(selectedIds).filter(id => {
       const tc = testCases.find(t => t.id === id)
       return tc && !tc.zephyrKey
     }).length
   }, [selectedIds, testCases])
-
-  // Scroll test case list when exporting
-  const [scrollIntoView, setScrollIntoView] = useState<string | null>(null)
 
   const handleSelectAll = () => {
     const newIds = new Set(

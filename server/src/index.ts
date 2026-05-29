@@ -8,11 +8,11 @@ import rateLimit from 'express-rate-limit'
 import { Server as SocketIOServer } from 'socket.io'
 import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
-import { prisma } from '../lib/prisma'
-import { redis } from '../lib/redis'
-import logger from '../lib/logger'
-import { errorHandler } from '../middleware/errorHandler'
-import apiRouter from '../routes'
+import { prisma } from './lib/prisma'
+import { redis } from './lib/redis'
+import logger from './lib/logger'
+import { errorHandler } from './middleware/errorHandler'
+import apiRouter from './routes'
 
 // Swagger configuration
 const swaggerOptions = {
