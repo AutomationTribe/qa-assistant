@@ -47,11 +47,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            cd /home/deploy/regi/qa-assistant
-            git fetch origin
-            git checkout main
-            git pull origin main
-            bash deploy.sh
+            bash /home/deploy/regi/deploy.sh
 
       - name: Deployment complete
         if: success()
