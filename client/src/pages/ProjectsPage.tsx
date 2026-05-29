@@ -8,22 +8,22 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { toast } from '@/store/toastStore'
 import type { Project } from '@/types/api'
 
-const STYLE_EMOJI: Record<string, string> = {
-  waterfall: '↓',
-  agile_scrum: '↻',
-  agile_kanban: '≡',
+const STYLE_CONFIG: Record<string, { emoji: string; label: string; bg: string; text: string }> = {
+  waterfall: { emoji: '↓', label: 'Waterfall', bg: '#E6F1FB', text: '#0C447C' },
+  agile_scrum: { emoji: '↻', label: 'Agile — Scrum', bg: '#EEEDFE', text: '#3C3489' },
+  agile_kanban: { emoji: '≡', label: 'Agile — Kanban', bg: '#EAF3DE', text: '#27500A' },
+  step_by_step: { emoji: '✓', label: 'Step by step', bg: '#EEEDFE', text: '#3C3489' },
+  bdd: { emoji: '🧪', label: 'BDD', bg: '#EEEDFE', text: '#3C3489' },
+  exploratory: { emoji: '🔍', label: 'Exploratory', bg: '#EEEDFE', text: '#3C3489' },
 }
 
-const STYLE_LABELS: Record<string, string> = {
-  waterfall: 'Waterfall',
-  agile_scrum: 'Agile — Scrum',
-  agile_kanban: 'Agile — Kanban',
-}
-
-const STYLE_COLORS: Record<string, { bg: string; text: string }> = {
-  waterfall: { bg: '#EEEDFE', text: '#534AB7' },
-  agile_scrum: { bg: '#EEEDFE', text: '#534AB7' },
-  agile_kanban: { bg: '#EEEDFE', text: '#534AB7' },
+const getStyleConfig = (style: string | undefined) => {
+  return STYLE_CONFIG[style as keyof typeof STYLE_CONFIG] ?? {
+    emoji: '•',
+    label: style || 'Not set',
+    bg: '#F4F4F2',
+    text: '#666',
+  }
 }
 
 export default function ProjectsPage() {
@@ -102,8 +102,8 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {projects.map((project) => {
-            const style = project.templateConfig.style
-            const colors = STYLE_COLORS[style] || { bg: '#EEEDFE', text: '#534AB7' }
+            const style = (project.templateConfig as any)?.style
+            const config = getStyleConfig(style)
             return (
               <div
                 key={project.id}
@@ -112,7 +112,7 @@ export default function ProjectsPage() {
               >
                 <div className="flex items-start gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-[#EEEDF8] flex items-center justify-center text-lg flex-shrink-0">
-                    {STYLE_EMOJI[style]}
+                    {config.emoji}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-[#111] truncate">{project.name}</h3>
@@ -132,9 +132,9 @@ export default function ProjectsPage() {
                 <div>
                   <span
                     className="inline-block text-[10.5px] font-medium px-3 py-1 rounded-full"
-                    style={{ backgroundColor: colors.bg, color: colors.text }}
+                    style={{ backgroundColor: config.bg, color: config.text }}
                   >
-                    {STYLE_LABELS[style]}
+                    {config.label}
                   </span>
                 </div>
               </div>
