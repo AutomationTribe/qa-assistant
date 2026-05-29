@@ -1,5 +1,157 @@
+# Phase — Add Test Case Manually
+
+## What this builds
+A side panel for manually creating test cases. Fields are driven
+by the project template. A toggle controls whether the panel stays
+open after saving to allow creating multiple test cases in sequence.
+
+---
+
+## Workflow
+Work on the develop branch.
+Merge to main when done.
+Do not push to remote.
+
+---
+
+## Server changes
+
+### server/src/controllers/testCaseController.ts
+
+Add a create endpoint alongside the existing generate endpoint:
+
+```typescript
+create: async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { featureId } = req.params
+    const { fieldValues } = req.body
+
+    if (!fieldValues || typeof fieldValues !== 'object') {
+      return res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'fieldValues is required',
+        },
+      })
+    }
+
+    const testCase = await testCaseService.createTestCase(
+      featureId,
+      req.user!.workspaceId,
+      fieldValues
+    )
+    return res.status(201).json({ testCase })
+  } catch (err) {
+    next(err)
+  }
+},
+```
+
+### server/src/services/testCaseService.ts
+
+Add createTestCase alongside generateTestCases:
+
+```typescript
+async createTestCase(
+  featureId: string,
+  workspaceId: string,
+  fieldValues: Record<string, any>
+): Promise<TestCase> {
+  const feature = await prisma.feature.findUnique({
+    where: { id: featureId },
+    include: { project: true },
+  })
+
+  if (!feature) throw new NotFoundError('Feature not found')
+  if (feature.project.workspaceId !== workspaceId) {
+    throw new UnauthorizedError('Unauthorized')
+  }
+
+  const testCase = await prisma.testCase.create({
+    data: {
+      featureId,
+      fieldValues,
+      generatedBy: 'MANUAL',
+    },
+  })
+
+  return testCase
+}
+```
+
+### server/src/routes/testCases.ts
+
+Add the create route alongside generate:
+
+```typescript
+/**
+ * @swagger
+ * /api/v1/features/{featureId}/testcases:
+ *   post:
+ *     tags: [TestCases]
+ *     summary: Create a test case manually
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: featureId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fieldValues]
+ *             properties:
+ *               fieldValues:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Test case created
+ */
+router.post(
+  '/features/:featureId/testcases',
+  authenticate,
+  testCaseController.create
+)
+```
+
+Note: check the existing routes file — the generate endpoint is at
+POST /features/:featureId/testcases/generate. The new create endpoint
+is at POST /features/:featureId/testcases (no /generate suffix).
+If there is a conflict with an existing route, rename appropriately.
+
+---
+
+## Client changes
+
+### client/src/api/testcases.ts
+
+Add createTestCase alongside existing methods:
+
+```typescript
+async createTestCase(
+  featureId: string,
+  fieldValues: Record<string, any>
+): Promise<TestCase> {
+  const res = await apiClient.post<{ testCase: TestCase }>(
+    `/features/${featureId}/testcases`,
+    { fieldValues }
+  )
+  return res.data.testCase
+},
+```
+
+---
+
+### client/src/components/AddTestCasePanel.tsx
+
+Create this new file. It is a slide-in side panel that renders
+form fields dynamically from the project template.
+
+```tsx
 import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { TestCaseField } from '@/types/api'
 import { testCasesAPI } from '@/api/testcases'
 import { toast } from '@/store/toastStore'
@@ -118,8 +270,8 @@ export default function AddTestCasePanel({
   const stepsField = fields.find(f => f.type === 'STEPS')
   const otherFields = fields.filter(f => f.type !== 'STEPS')
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
+  return (
+    <div className="fixed inset-0 z-40 flex justify-end">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/20"
@@ -347,7 +499,128 @@ export default function AddTestCasePanel({
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   )
 }
+```
+
+---
+
+### client/src/pages/TestCasesPage.tsx
+
+#### Add state for the panel
+
+```typescript
+const [addPanelOpen, setAddPanelOpen] = useState(false)
+```
+
+#### Add the button to the topbar
+
+Find the topbar buttons section and add:
+
+```tsx
+<button
+  onClick={() => setAddPanelOpen(true)}
+  className="btn-s flex items-center gap-1.5"
+>
+  <span>＋</span> Add test case
+</button>
+```
+
+Place it alongside the existing "Export to Zephyr" and "Regenerate" buttons.
+
+#### Mount the panel
+
+Add this at the bottom of the JSX, before the closing tag:
+
+```tsx
+<AddTestCasePanel
+  open={addPanelOpen}
+  onClose={() => setAddPanelOpen(false)}
+  featureId={featureId!}
+  projectName={feature?.project?.name || 'this project'}
+  fields={fields}
+  onSaved={(newTestCase) => {
+    // Add the new test case to the list without refetching
+    setTestCases(prev => [...prev, newTestCase])
+    // Also open the new row in edit mode
+    setExpandedIds(prev => new Set([...prev, newTestCase.id]))
+    setDrafts(prev => ({
+      ...prev,
+      [newTestCase.id]: { ...newTestCase.fieldValues },
+    }))
+  }}
+/>
+```
+
+Import AddTestCasePanel at the top of the file:
+```typescript
+import AddTestCasePanel from '@/components/AddTestCasePanel'
+```
+
+---
+
+## Empty state — show Add manually button
+
+When there are no test cases yet, the empty state already has a
+"Generate with AI" button. Add a second button next to it:
+
+```tsx
+{/* In the empty state section */}
+<button
+  onClick={() => setAddPanelOpen(true)}
+  className="btn-s"
+>
+  ＋ Add manually
+</button>
+```
+
+---
+
+## After building — test these flows
+
+### Flow A — Add a test case, pane closes
+1. Click Add test case button
+2. Panel slides in from the right
+3. Fill in required fields (name, objective, priority, at least 1 step)
+4. Confirm "Create another after saving" toggle is OFF
+5. Click Save test case
+6. Confirm:
+   - Toast appears: "Test case saved successfully"
+   - Panel closes
+   - New test case appears at the bottom of the test cases table
+   - New row is expanded in edit mode
+
+### Flow B — Add multiple test cases, pane stays open
+1. Click Add test case
+2. Toggle ON "Create another after saving"
+3. Hint changes to "Pane stays open to add another"
+4. Fill in and save
+5. Confirm:
+   - Toast appears
+   - Panel stays open
+   - All fields are cleared
+   - New test case appears in the table
+6. Fill in and save again — same behaviour
+7. Toggle OFF, save — panel closes
+
+### Flow C — Validation
+1. Click Save with empty name — name field highlighted red
+2. Click Save with no steps — steps section highlighted red
+3. Fill required fields — errors clear as you type
+
+### Flow D — Template reflects latest fields
+1. Go to template page, add a new field
+2. Come back to test cases page
+3. Click Add test case
+4. Confirm the new field appears in the panel
+5. The fields always come from the loaded `fields` array
+   which is fetched from the API — not hardcoded
+
+### Flow E — Empty state
+1. Navigate to a feature with no test cases
+2. Confirm empty state shows both "Generate with AI" and "Add manually" buttons
+3. Click Add manually — panel opens
+
+Fix all TypeScript errors before confirming done.
+Do not modify any database schema or migration files.

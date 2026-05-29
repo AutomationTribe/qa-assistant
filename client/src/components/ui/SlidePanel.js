@@ -2,20 +2,17 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 export default function SlidePanel({ open, onClose, title, subtitle, children, footer, width = '420px', }) {
     const [visible, setVisible] = useState(false);
-    const [animating, setAnimating] = useState(false);
     const [closing, setClosing] = useState(false);
     useEffect(() => {
         if (open) {
             setVisible(true);
             setClosing(false);
-            requestAnimationFrame(() => setAnimating(true));
         }
     }, [open]);
     const handleClose = () => {
         setClosing(true);
         setTimeout(() => {
             setVisible(false);
-            setAnimating(false);
             setClosing(false);
             onClose();
         }, 250);

@@ -20,12 +20,11 @@ export default function Layout({ title, actions, children }) {
             // Even if the server call fails, clear local auth state
         }
         finally {
+            sessionStorage.removeItem('regi_session');
             clearAuth();
             navigate('/login');
         }
     };
-    const initials = user ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase() : 'U';
-    const roleLabel = user?.role.replace(/_/g, ' ').toLowerCase() || 'User';
     const navItems = [
         { icon: '▣', label: 'Projects', path: '/projects', active: true },
         { icon: '🎫', label: 'Tickets', path: '/tickets', badge: 'soon' },
