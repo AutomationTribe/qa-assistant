@@ -9,6 +9,14 @@ interface LayoutProps {
   children: ReactNode
 }
 
+interface NavItem {
+  icon: string
+  label: string
+  path: string
+  active?: boolean
+  badge?: string
+}
+
 export default function Layout({ title, actions, children }: LayoutProps) {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
@@ -32,14 +40,6 @@ export default function Layout({ title, actions, children }: LayoutProps) {
       clearAuth()
       navigate('/login')
     }
-  }
-
-  type NavItem = {
-    icon: string
-    label: string
-    path: string
-    active?: boolean
-    badge?: string
   }
 
   const navItems: NavItem[] = [

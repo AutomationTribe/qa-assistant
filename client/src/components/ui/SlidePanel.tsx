@@ -20,14 +20,12 @@ export default function SlidePanel({
   width = '420px',
 }: SlidePanelProps) {
   const [visible, setVisible] = useState(false)
-  const [animating, setAnimating] = useState(false)
   const [closing, setClosing] = useState(false)
 
   useEffect(() => {
     if (open) {
       setVisible(true)
       setClosing(false)
-      requestAnimationFrame(() => setAnimating(true))
     }
   }, [open])
 
@@ -35,7 +33,6 @@ export default function SlidePanel({
     setClosing(true)
     setTimeout(() => {
       setVisible(false)
-      setAnimating(false)
       setClosing(false)
       onClose()
     }, 250)

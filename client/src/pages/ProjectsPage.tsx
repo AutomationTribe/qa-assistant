@@ -103,7 +103,7 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {projects.map((project) => {
             const style = project.templateConfig.style
-            const colors = STYLE_COLORS[style]
+            const colors = STYLE_COLORS[style] || { bg: '#EEEDFE', text: '#534AB7' }
             return (
               <div
                 key={project.id}
@@ -157,13 +157,13 @@ export default function ProjectsPage() {
       <ConfirmDialog
         open={deleteConfirmOpen}
         title="Delete project?"
-        message={`Are you sure you want to delete "${projectToDelete?.name}"? All associated features and test cases will also be deleted. This cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete "${projectToDelete?.name}"? All associated features and test cases will also be deleted. This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
-        isDangerous
+        isDestructive
       />
 
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
