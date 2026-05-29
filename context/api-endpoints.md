@@ -907,6 +907,46 @@ Errors:
 
 ---
 
+### POST /api/v1/features/:featureId/testcases
+Create a test case manually. Field keys must match the project's template.
+
+Request body:
+```json
+{
+  "fieldValues": {
+    "test_title": "Successful login with valid credentials",
+    "test_priority": "HIGH",
+    "test_type": "POSITIVE",
+    "test_steps": ["Navigate to /login", "Enter valid email", "Click Sign In"],
+    "expected_result": "User is redirected to dashboard. Session persists on refresh."
+  }
+}
+```
+
+Response 201:
+```json
+{
+  "testCase": {
+    "id": "uuid",
+    "featureId": "uuid",
+    "fieldValues": {
+      "test_title": "Successful login with valid credentials",
+      "test_priority": "HIGH",
+      "test_type": "POSITIVE",
+      "test_steps": ["Navigate to /login", "Enter valid email", "Click Sign In"],
+      "expected_result": "User is redirected to dashboard. Session persists on refresh."
+    },
+    "generatedBy": "HUMAN",
+    "createdAt": "2026-05-01T12:00:00.000Z",
+    "updatedAt": "2026-05-01T12:00:00.000Z"
+  }
+}
+```
+
+Errors:
+- 404 NOT_FOUND — feature does not exist or does not belong to workspace
+- 400 VALIDATION_ERROR — fieldValues is missing or invalid
+- 401 UNAUTHORIZED — access denied
 
 ---
 
