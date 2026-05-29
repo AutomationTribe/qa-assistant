@@ -62,4 +62,29 @@ export const testCaseController = {
       next(error)
     }
   },
+
+  create: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { featureId } = req.params
+      const { fieldValues } = req.body
+
+      if (!fieldValues || typeof fieldValues !== 'object') {
+        return res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'fieldValues is required',
+          },
+        })
+      }
+
+      const testCase = await testCaseService.createTestCase(
+        featureId,
+        req.user!.workspaceId,
+        fieldValues
+      )
+      return res.status(201).json({ testCase })
+    } catch (error) {
+      next(error)
+    }
+  },
 }

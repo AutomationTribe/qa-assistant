@@ -8,6 +8,7 @@ import { TestCaseField, ZephyrConnection } from '@/types/api'
 import { zephyrAPI } from '@/api/zephyr'
 import Layout from '@/components/Layout'
 import ZephyrExportModal from '@/components/ZephyrExportModal'
+import AddTestCasePanel from '@/components/AddTestCasePanel'
 
 
 function parseSteps(raw: any): Array<{ action: string; data: string; expected: string }> {
@@ -83,6 +84,7 @@ export default function TestCasesPage() {
   const [drafts, setDrafts] = useState<Record<string, Record<string, any>>>({})
   const [zephyrConn, setZephyrConn] = useState<ZephyrConnection | null>(null)
   const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [addPanelOpen, setAddPanelOpen] = useState(false)
 
   useEffect(() => {
     if (!featureId) return
@@ -301,6 +303,7 @@ export default function TestCasesPage() {
         </button>
       )}
       <button
+        onClick={() => setAddPanelOpen(true)}
         className="flex items-center gap-1.5 bg-[#4F46E5] text-white border-none rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#4338CA] transition-colors"
       >
         ＋ Add test case
@@ -384,6 +387,12 @@ export default function TestCasesPage() {
                   className="bg-[#4F46E5] hover:bg-[#4338CA] text-white border-none rounded-lg px-5 py-2.5 text-[13px] font-medium cursor-pointer font-sans"
                 >
                   ✦ Generate with AI
+                </button>
+                <button
+                  onClick={() => setAddPanelOpen(true)}
+                  className="bg-white hover:bg-[#FAFAF8] text-[#111] border border-[#D8D8D4] rounded-lg px-5 py-2.5 text-[13px] font-medium cursor-pointer font-sans"
+                >
+                  ＋ Add manually
                 </button>
               </div>
             </div>
@@ -579,6 +588,25 @@ export default function TestCasesPage() {
             }}
           />
         )}
+
+        <AddTestCasePanel
+          open={addPanelOpen}
+          onClose={() => setAddPanelOpen(false)}
+          featureId={featureId!}
+          projectName={project?.name || 'this project'}
+          fields={fields}
+          onSaved={(newTestCase) => {
+            const currentTestCases = useTestCaseStore.getState().testCases
+            useTestCaseStore.setState({
+              testCases: [...currentTestCases, newTestCase]
+            })
+            setExpandedIds(prev => new Set([...prev, newTestCase.id]))
+            setDrafts(prev => ({
+              ...prev,
+              [newTestCase.id]: { ...newTestCase.fieldValues },
+            }))
+          }}
+        />
       </div>
     </Layout>
   )

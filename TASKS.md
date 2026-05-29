@@ -9,6 +9,7 @@
 - Phase 6 — Test Cases + Generate Flow       ✅ done
 - Phase 7 — AI Generation + Dynamic Columns + Sidebar  ✅ done
 - Phase 8 — Zephyr Scale Export              ✅ done
+- Phase 9 — Add Test Case Manually           ✅ done
 
 ---
 
@@ -399,9 +400,62 @@
 
 ---
 
-## Future — Phase 9+
+## Phase 9 — Add Test Case Manually ✅
+
+✅ Manual test case creation endpoint (server)
+   - Files: server/src/controllers/testCaseController.ts,
+     server/src/services/testCaseService.ts, server/src/routes/testcases.ts
+   - POST /api/v1/features/:featureId/testcases — create test case manually
+   - Takes fieldValues in request body (matches template fields)
+   - Sets generatedBy to 'HUMAN' instead of 'LLM'
+   - Returns created test case with 201 status
+   - Authorization checks: verify feature exists and belongs to workspace
+
+✅ Manual test case API client (client)
+   - Files: client/src/api/testcases.ts
+   - Added createTestCase method: post to /features/:featureId/testcases with fieldValues
+
+✅ AddTestCasePanel component (client)
+   - Files: client/src/components/AddTestCasePanel.tsx
+   - Side panel slide-in from right with backdrop
+   - Dynamic form fields driven by project template:
+     * TEXT field → input text
+     * TEXTAREA field → textarea
+     * SELECT field → select dropdown
+     * BOOLEAN field → checkbox
+     * NUMBER field → number input
+     * STEPS field → specialized table with 3-column step editor (Action | Data | Expected)
+   - Step editor: pipe-separated format, add/remove steps dynamically
+   - Form validation: required fields highlighted red, errors clear on edit
+   - "Create another after saving" toggle to stay open for batch creation
+   - Save button shows loading spinner during submission
+   - Toast notifications: success/error feedback
+   - onSaved callback receives new test case, integrates into list
+
+✅ TestCasesPage integration (client)
+   - Files: client/src/pages/TestCasesPage.tsx
+   - Added state: addPanelOpen boolean
+   - Added "Add test case" button to topbar with onClick handler
+   - Added "Add manually" button to empty state (alongside "Generate with AI")
+   - Mount AddTestCasePanel at bottom of page
+   - onSaved callback:
+     * Updates test case list in Zustand store via setState
+     * Expands new row in edit mode
+     * Pre-populates draft values
+   - New test cases appear at bottom of table immediately
+
+✅ API documentation
+   - Files: context/api-endpoints.md
+   - Added POST /api/v1/features/:featureId/testcases endpoint with example
+
+✅ Type declarations (server)
+   - Installed @types/sizzle, @types/sinon-chai, @types/tmp to fix build errors
+   - All TypeScript compilation succeeds without blocking errors
+
+---
+
+## Future — Phase 10+
 🔲 Jira webhook listener
-🔲 Zephyr Scale direct push integration
 🔲 Batch file import (CSV/JSON upload)
 🔲 Test case coverage analytics dashboard
 🔲 Slack / Teams notifications

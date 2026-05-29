@@ -35,4 +35,15 @@ export const testCasesAPI = {
   async deleteTestCase(testCaseId: string): Promise<void> {
     await apiClient.delete(`/testcases/${testCaseId}`)
   },
+
+  async createTestCase(
+    featureId: string,
+    fieldValues: Record<string, any>
+  ): Promise<TestCase> {
+    const res = await apiClient.post<{ testCase: TestCase }>(
+      `/features/${featureId}/testcases`,
+      { fieldValues }
+    )
+    return res.data.testCase
+  },
 }
