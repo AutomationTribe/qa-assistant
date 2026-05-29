@@ -44,18 +44,18 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           <button
             type="button"
             onClick={() => setIsVisible(!isVisible)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#999] hover:text-[#666] transition-colors"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#666] hover:text-[#333] transition-colors p-1"
             tabIndex={-1}
             aria-label={isVisible ? 'Hide password' : 'Show password'}
           >
             {isVisible ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-4.753 4.753m4.753-4.753L3.596 3.039m10.318 10.318L21 21" />
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3.98 8.223A10.477 10.477 0 001.934 12c1.226 4.338 5.557 7.5 10.734 7.5.766 0 1.52-.06 2.255-.178l-1.08-1.079A6.75 6.75 0 1112 4.5c2.052 0 3.913.84 5.25 2.195l-1.272-1.272A10.5 10.5 0 0012 1.5C6.477 1.5 1.637 4.61.294 9.49a10.724 10.724 0 003.686 8.733z" />
+                <path d="M15.75 12c0 2.07-1.681 3.75-3.75 3.75s-3.75-1.68-3.75-3.75m7.5 0c0 2.07-1.681 3.75-3.75 3.75s-3.75-1.68-3.75-3.75m7.5 0c0-2.07-1.681-3.75-3.75-3.75s-3.75 1.68-3.75 3.75M6 12a6 6 0 1112 0 6 6 0 01-12 0zm12-6a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 4.5C7.304 4.5 3.117 7.327 1.5 11.25c1.617 3.923 5.804 6.75 10.5 6.75s8.883-2.827 10.5-6.75c-1.617-3.923-5.804-6.75-10.5-6.75zm0 9a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
               </svg>
             )}
           </button>
