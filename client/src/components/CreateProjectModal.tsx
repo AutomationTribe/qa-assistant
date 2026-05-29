@@ -4,7 +4,7 @@ import { useProjectStore } from '@/store/projectStore'
 import SlidePanel from '@/components/ui/SlidePanel'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import type { TemplateConfig, ProjectLogin } from '@/types/api'
+import type { ProjectLogin } from '@/types/api'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -16,11 +16,26 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
-  const [style, setStyle] = useState<TemplateConfig['style']>('bdd')
+  const [methodology, setMethodology] = useState<'waterfall' | 'agile_scrum' | 'agile_kanban' | null>(null)
+  const [agileClicked, setAgileClicked] = useState(false)
+  const [urlError, setUrlError] = useState('')
   const [logins, setLogins] = useState<ProjectLogin[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { createProject } = useProjectStore()
+
+  const URL_PATTERN =
+    /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$|^https?:\/\/localhost(:\d+)?(\/.*)?$/
+
+  const validateBaseUrl = (value: string): boolean => {
+    if (!value.trim()) {
+      setUrlError('')
+      return true
+    }
+    const valid = URL_PATTERN.test(value.trim())
+    setUrlError(valid ? '' : 'invalid')
+    return valid
+  }
 
   const handleAddLogin = () => {
     if (logins.length < 5) {
@@ -41,18 +56,18 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
   const handleCreate = async () => {
     setError(null)
 
-    if (name.trim().length < 2) {
-      setError('Project name must be at least 2 characters')
+    if (!name.trim() || name.trim().length < 3) {
+      setError('Project name must be at least 3 characters')
       return
     }
 
-    if (baseUrl.trim()) {
-      try {
-        new URL(baseUrl.trim())
-      } catch {
-        setError('Base URL must be a valid URL (e.g., https://app.example.com)')
-        return
-      }
+    if (baseUrl && !validateBaseUrl(baseUrl)) {
+      return
+    }
+
+    if (!methodology) {
+      setError('Please select a development methodology')
+      return
     }
 
     const validLogins = logins
@@ -69,13 +84,14 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         name: name.trim(),
         description: description.trim() || undefined,
         baseUrl: baseUrl.trim() || undefined,
-        templateConfig: { style },
+        templateConfig: { style: methodology },
         logins: validLogins.length > 0 ? validLogins : undefined,
       })
       setName('')
       setDescription('')
       setBaseUrl('')
-      setStyle('bdd')
+      setMethodology(null)
+      setAgileClicked(false)
       setLogins([])
       onClose()
       navigate(`/projects/${project.id}/template`)
@@ -130,41 +146,144 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
           disabled={isSubmitting}
         />
 
-        <Input
-          label="Base URL"
-          type="url"
-          placeholder="https://app.yourproduct.com"
-          hint="Helps the AI understand the context of your tests"
-          value={baseUrl}
-          onChange={(e) => setBaseUrl(e.target.value)}
-          optional
-          disabled={isSubmitting}
-        />
-
-        {/* Test Case Style */}
-        <div className="mb-4">
-          <label className="text-xs font-medium text-[#333] block mb-3">Testing Style</label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { value: 'bdd' as const, icon: '📋', label: 'BDD' },
-              { value: 'step_by_step' as const, icon: '🔢', label: 'Step by Step' },
-              { value: 'exploratory' as const, icon: '🔍', label: 'Exploratory' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setStyle(option.value)}
-                disabled={isSubmitting}
-                className={`py-3 px-2 rounded-lg text-center text-xs font-medium transition border-2 ${
-                  style === option.value
-                    ? 'border-[#4F46E5] bg-[#EEEDF8] text-[#4F46E5]'
-                    : 'border-[#DDDDD9] text-[#999] hover:border-[#4F46E5]/30'
-                } disabled:opacity-50`}
-              >
-                <div className="text-lg mb-1">{option.icon}</div>
-                {option.label}
-              </button>
+        <div>
+          <label className="text-xs font-medium text-[#333] block mb-2">
+            Base URL
+            <span className="text-[11px] font-normal text-[#aaa] ml-1">optional</span>
+          </label>
+          <input
+            type="text"
+            value={baseUrl}
+            onChange={e => {
+              setBaseUrl(e.target.value)
+              if (urlError) validateBaseUrl(e.target.value)
+            }}
+            onBlur={e => validateBaseUrl(e.target.value)}
+            placeholder="www.yourapp.com or https://yourapp.com"
+            className={[
+              'w-full px-3 py-2 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10',
+              urlError ? 'border-[#E24B4A]' : 'border-[#DDDDD9]',
+            ].join(' ')}
+            disabled={isSubmitting}
+          />
+          {urlError && (
+            <div className="text-[11.5px] text-[#A32D2D] mt-1">
+              Enter a valid URL — e.g. www.test.com, https://www.test.com or https://test.com
+            </div>
+          )}
+          <div className="flex gap-1.5 mt-1.5 flex-wrap">
+            {['www.test.com', 'https://www.test.com', 'https://test.com', 'http://localhost:3000'].map(f => (
+              <span key={f} className="text-[11px] px-2 py-0.5 rounded-full bg-[#F4F4F2] border border-[#EBEBEB] font-mono text-[#666]">
+                {f}
+              </span>
             ))}
           </div>
+        </div>
+
+        {/* Development methodology */}
+        <div>
+          <label className="text-xs font-medium text-[#333] block mb-3">Development methodology</label>
+
+          {/* Main method cards */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              {
+                value: 'waterfall',
+                label: 'Waterfall',
+                desc: 'Sequential phases with defined milestones',
+                icon: '↓',
+              },
+              {
+                value: 'agile',
+                label: 'Agile',
+                desc: 'Iterative delivery with continuous feedback',
+                icon: '↻',
+              },
+            ].map(opt => {
+              const isWaterfall = opt.value === 'waterfall'
+              const isSelected = isWaterfall
+                ? methodology === 'waterfall'
+                : methodology === 'agile_scrum' || methodology === 'agile_kanban'
+
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => {
+                    if (isWaterfall) {
+                      setMethodology('waterfall')
+                      setAgileClicked(false)
+                    } else {
+                      setAgileClicked(true)
+                      setMethodology(null)
+                    }
+                  }}
+                  className={[
+                    'border rounded-xl p-3 cursor-pointer transition-all',
+                    isSelected
+                      ? 'border-[#534AB7] bg-[#EEEDFE]'
+                      : 'border-[#DDDDD9] bg-white hover:border-[#AFA9EC]',
+                  ].join(' ')}
+                >
+                  <div className={`text-[13px] font-medium mb-0.5 ${isSelected ? 'text-[#534AB7]' : 'text-[#111]'}`}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11.5px] text-[#888] leading-snug">{opt.desc}</div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Agile sub-options — shown when Agile card is active */}
+          {agileClicked && (
+            <div className="mt-2 p-3 bg-[#FAFAF8] border border-[#EBEBEB] rounded-xl mb-3">
+              <div className="text-[11px] font-medium text-[#888] uppercase tracking-wide mb-2">
+                Choose Agile framework
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'scrum', label: 'Scrum', desc: 'Sprints, standups, retrospectives' },
+                  { value: 'kanban', label: 'Kanban', desc: 'Continuous flow, WIP limits' },
+                ].map(sub => {
+                  const isSelected = methodology === `agile_${sub.value}`
+                  return (
+                    <div
+                      key={sub.value}
+                      onClick={() => {
+                        setMethodology(`agile_${sub.value}` as 'agile_scrum' | 'agile_kanban')
+                      }}
+                      className={[
+                        'border rounded-xl p-3 cursor-pointer transition-all flex items-start gap-2',
+                        isSelected
+                          ? 'border-[#534AB7] bg-[#EEEDFE]'
+                          : 'border-[#DDDDD9] bg-white hover:border-[#AFA9EC]',
+                      ].join(' ')}
+                    >
+                      <div className={[
+                        'w-4 h-4 rounded-full border-[1.5px] flex-shrink-0 mt-0.5',
+                        isSelected ? 'bg-[#534AB7] border-[#534AB7]' : 'border-[#DDDDD9]',
+                      ].join(' ')} />
+                      <div>
+                        <div className={`text-[13px] font-medium ${isSelected ? 'text-[#534AB7]' : 'text-[#111]'}`}>
+                          {sub.label}
+                        </div>
+                        <div className="text-[11.5px] text-[#888]">{sub.desc}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Badge preview */}
+          {methodology && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EEEDFE] border border-[#AFA9EC] text-[12px] font-medium text-[#3C3489]">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#534AB7]" />
+              {methodology === 'waterfall' && 'Waterfall'}
+              {methodology === 'agile_scrum' && 'Agile — Scrum'}
+              {methodology === 'agile_kanban' && 'Agile — Kanban'}
+            </div>
+          )}
         </div>
 
         {/* Test Logins */}

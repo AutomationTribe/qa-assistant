@@ -8,7 +8,7 @@ class ProjectError extends Error {
 }
 
 interface TemplateConfig {
-  style: 'bdd' | 'step_by_step' | 'exploratory'
+  style: 'waterfall' | 'agile_scrum' | 'agile_kanban'
 }
 
 interface ProjectLogin {

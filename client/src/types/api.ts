@@ -7,7 +7,7 @@ export type AuthUser = {
 }
 
 export type TemplateConfig = {
-  style: 'bdd' | 'step_by_step' | 'exploratory'
+  style: 'waterfall' | 'agile_scrum' | 'agile_kanban'
 }
 
 export type ProjectLogin = {

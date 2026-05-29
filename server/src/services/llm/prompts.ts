@@ -37,6 +37,12 @@ export function buildTestCaseGenerationPrompt(
     })
     .join('\n')
 
+  const methodologyLabel =
+    style === 'waterfall' ? 'Waterfall — sequential phases'
+    : style === 'agile_scrum' ? 'Agile Scrum — sprint-based delivery'
+    : style === 'agile_kanban' ? 'Agile Kanban — continuous flow'
+    : 'Agile'
+
   const systemPrompt = `You are a senior QA engineer generating structured test cases.
 
 Return ONLY a valid JSON array. No markdown, no explanation, no preamble, no code fences.
@@ -48,7 +54,7 @@ ${fields.map(f => `"${f.key}"`).join(', ')}
 Field definitions:
 ${fieldSchema}
 
-Test case style: ${style}
+Development methodology: ${methodologyLabel}
 Generate a mix of positive, negative, and edge case scenarios.
 
 For STEPS fields: return an array of strings, one string per step.

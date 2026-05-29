@@ -9,21 +9,21 @@ import { useToastStore } from '@/store/toastStore'
 import type { Project } from '@/types/api'
 
 const STYLE_EMOJI: Record<string, string> = {
-  bdd: '📋',
-  step_by_step: '🔢',
-  exploratory: '🔍',
+  waterfall: '↓',
+  agile_scrum: '↻',
+  agile_kanban: '≡',
 }
 
 const STYLE_LABELS: Record<string, string> = {
-  bdd: 'BDD',
-  step_by_step: 'Step by Step',
-  exploratory: 'Exploratory',
+  waterfall: 'Waterfall',
+  agile_scrum: 'Agile — Scrum',
+  agile_kanban: 'Agile — Kanban',
 }
 
 const STYLE_COLORS: Record<string, { bg: string; text: string }> = {
-  bdd: { bg: '#ECFDF5', text: '#059669' },
-  step_by_step: { bg: '#FFFBEB', text: '#B45309' },
-  exploratory: { bg: '#EEEDF8', text: '#4F46E5' },
+  waterfall: { bg: '#EEEDFE', text: '#534AB7' },
+  agile_scrum: { bg: '#EEEDFE', text: '#534AB7' },
+  agile_kanban: { bg: '#EEEDFE', text: '#534AB7' },
 }
 
 export default function ProjectsPage() {
