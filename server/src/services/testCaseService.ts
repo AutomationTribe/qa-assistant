@@ -73,6 +73,32 @@ export const testCaseService = {
     })
   },
 
+  async createTestCase(
+    featureId: string,
+    workspaceId: string,
+    fieldValues: Record<string, any>
+  ): Promise<TestCase> {
+    const feature = await prisma.feature.findUnique({
+      where: { id: featureId },
+      include: { project: true },
+    })
+
+    if (!feature) throw new NotFoundError('Feature not found')
+    if (feature.project.workspaceId !== workspaceId) {
+      throw new UnauthorizedError('Unauthorized')
+    }
+
+    const testCase = await prisma.testCase.create({
+      data: {
+        featureId,
+        fieldValues,
+        generatedBy: 'HUMAN',
+      },
+    })
+
+    return testCase
+  },
+
   async generateTestCases(featureId: string, workspaceId: string) {
     const feature = await prisma.feature.findUnique({
       where: { id: featureId },

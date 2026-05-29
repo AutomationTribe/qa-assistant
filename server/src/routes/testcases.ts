@@ -40,6 +40,44 @@ router.get('/features/:featureId/testcases', authenticate, testCaseController.li
 
 /**
  * @swagger
+ * /api/v1/features/{featureId}/testcases:
+ *   post:
+ *     summary: Create a test case manually
+ *     tags: [Test Cases]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: featureId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Feature ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fieldValues]
+ *             properties:
+ *               fieldValues:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Test case created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 testCase:
+ *                   type: object
+ */
+router.post('/features/:featureId/testcases', authenticate, testCaseController.create)
+
+/**
+ * @swagger
  * /api/v1/features/{featureId}/testcases/generate:
  *   post:
  *     summary: Generate test cases with AI
